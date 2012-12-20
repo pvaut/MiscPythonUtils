@@ -1,0 +1,386 @@
+from TableUtils import VTTable
+import MySQLdb
+import sys
+import math
+
+
+meta={}
+meta['DBSRV']='localhost'
+meta['DBUSER']='root'
+meta['DBPASS']='1234'
+meta['DB']='world'
+
+sourcedir='C:/Data/Genomes/PlasmodiumFalciparum/Release_21'
+
+
+def OpenDatabase():
+    return MySQLdb.connect(host=meta['DBSRV'], user=meta['DBUSER'], passwd=meta['DBPASS'], db=meta['DB'])
+
+def GetSnpInRange(chromoId,start,stop):
+    if chromoId[0:3]!='MAL':
+        raise Exception('Invalid chromosome identifier '+chromoId)
+    chromoNr=int(chromoId[3:])
+    rs=[]
+    db=OpenDatabase()
+    cur = db.cursor()
+    whereclause='SELECT pos, snpid, ref, nonrref FROM pfsnprel21 WHERE (chrom={0}) and (pos>={1}) and (pos<={2})'.format(chromoNr,start,stop)
+    cur.execute(whereclause)
+    for row in cur.fetchall() :
+        rs.append({
+                   'pos':row[0],
+                   'snpid':row[1],
+                   'ref':row[2],
+                   'nonref':row[3]
+                   })
+    return rs
+
+
+def CreateDifferenceMask(st1,st2):
+    if len(st1)!=len(st2):
+        raise Exception('Incompatible string lengths ({0}-{1}'.format(st1,st2))
+    rs=[]
+    for i in range(len(st1)):
+        if st1[i]==st2[i]:
+            rs.append("'")
+        else:
+            rs.append('^')
+    return ''.join(rs)
+
+class SequenceTranslator:
+    def __init__(self):
+        #the following is the standard translation table:
+        self.AAs  =   'FFLLSSSSYY**CC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG'
+        self.Starts = '---M---------------M---------------M----------------------------'
+        self.Base1  = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
+        self.Base2  = 'TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG'
+        self.Base3  = 'TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG'
+        self.mapNucl2Amino={}
+        for i in range(len(self.AAs)):
+            self.mapNucl2Amino[self.Base1[i]+self.Base2[i]+self.Base3[i]]=self.AAs[i]
+    def Nucl2Amino(self,seq,kodonOffset):
+        rs=[]
+        ps=kodonOffset
+        sqlen=len(seq)
+        while ps<=sqlen-3:
+            rs.append(self.mapNucl2Amino[seq[ps:ps+3]])
+            ps+=3
+        return ''.join(rs)
+        
+
+class Genome:
+    def __init__(self):
+        self.sequences={}
+    def ReadFASTA(self,filename):
+        f=open(filename)
+        currentSeq=None
+        for line in f:
+            line=line.rstrip()
+            if len(line)>0:
+                if line[0]=='>':
+                    currentSeq=line[1:]
+                    self.sequences[currentSeq]=[]
+                    print('reading sequence '+currentSeq)
+                else:
+                    if not(currentSeq):
+                        raise Exception('Invalid fasta file')
+                    self.sequences[currentSeq].append(line)
+        f.close()
+        for currentSeq in self.sequences:
+            self.sequences[currentSeq]=''.join(self.sequences[currentSeq])
+    def GetRange(self,seqId,pos,length):#1-based
+        if not(seqId in self.sequences):
+            raise Exception('Invalid fasta file sequence index '+seqId)
+        return self.sequences[seqId][pos-1:pos-1+length]
+    
+
+#A class that encapsulates a specific variant for a haplotype locus
+class HaplotypeVariant:
+    def __init__(self):
+        pass
+    
+    
+#A class that encapsulates a locus on the genome for which we want to call haplotypes
+class HaplotypeLocus:
+    def __init__(self):
+        self.variants=[]#A list of all possible variants, represented by instances of HaplotypeVariant
+        
+        
+#A class that will call haplotypes on genotype data
+class HaplotypeCaller:
+    def __init__(self):
+        self.loci=[]#A list loci we will call, represented by instances of HaplotypeLocus
+        
+#The one and only caller instance
+caller=HaplotypeCaller()
+            
+#########################################################################################################################
+# COLLECTING INFORMATION FROM THE DATA TABLE FILES
+# note: ultimately, this will be read from database tables
+#########################################################################################################################
+tableHaplotypes=VTTable.VTTable()
+tableHaplotypes.allColumnsText=True
+tableHaplotypes.LoadFile(sourcedir+'/Haplotypes/Haplotypes.txt')
+tableHaplotypes.PrintRows(0,999)
+haplotypes=tableHaplotypes.ToListOfMaps()
+
+tableHaplotypeLoci=VTTable.VTTable()
+tableHaplotypeLoci.allColumnsText=True
+tableHaplotypeLoci.LoadFile(sourcedir+'/Haplotypes/HaplotypeLoci.txt')
+tableHaplotypeLoci.ConvertColToValue('PositionFirst')
+tableHaplotypeLoci.ConvertColToValue('PositionLast')
+tableHaplotypeLoci.ConvertColToValue('KodonOffset')
+tableHaplotypeLoci.PrintRows(0,999)
+haplotypeLoci=tableHaplotypeLoci.ToListOfMaps()
+
+
+
+
+refGenome=Genome()
+refGenome.ReadFASTA(sourcedir+'/OriginalData/sequences.dat')
+transl=SequenceTranslator()
+
+usedSnps={}#Will contain a collection info for all used snps, with the snpid as a key
+
+haplotypeSnpList={}#associates a list of snp to each haplotype, using the haplotype id as key
+
+#Collect elementary information and print haplotype info
+for locus in haplotypeLoci:
+    haplotypeId=locus['Id']
+    print('\n\n###########################################################################')
+    print('Haplotype locus id ['+haplotypeId+']')
+    print('Name='+locus['Name'])
+    chromId=locus['ChromosomeId']
+    posFirst=int(locus['PositionFirst'])
+    posLast=int(locus['PositionLast'])
+    kodonOffset=int(locus['KodonOffset'])
+    print('Position={0}:{1}-{2}'.format(chromId,posFirst,posLast))
+    seqHaploRef=refGenome.GetRange(chromId,posFirst,posLast-posFirst+1)
+    aminoHaploRef=transl.Nucl2Amino(seqHaploRef,kodonOffset)
+    print('RefSequence= '+seqHaploRef)
+    print('HAPLOTYPES:')
+    for haplotype in haplotypes:
+        if haplotypeId==haplotype['LocusId']:
+            seqHaplo=haplotype['Sequence']
+            aminoHaplo=transl.Nucl2Amino(seqHaplo,kodonOffset)
+            print(haplotype['Name'].ljust(10)+'   '+
+                  seqHaplo+'    '+aminoHaplo)
+            print(''.ljust(10)+'   '+
+                  CreateDifferenceMask(seqHaplo,seqHaploRef)+'    '+CreateDifferenceMask(aminoHaplo,aminoHaploRef))
+    observedSnpList=GetSnpInRange(chromId,posFirst,posLast)
+    haplotypeSnpList[haplotypeId]=observedSnpList
+    for snp in observedSnpList:
+        snpid=snp['snpid']
+        usedSnps[snpid]={'missingcount':0}
+        print('id={0} pos={1} ref={2} nonref={3}'.format(snpid.ljust(10),
+                                                         str(snp['pos']).ljust(6),
+                                                         snp['ref'],
+                                                         snp['nonref']
+                                                         ))
+        
+#The sorted list of all snps we consider
+snpList=[snpid for snpid in usedSnps]
+snpList.sort()
+print('SNP LIST: '+str(snpList))
+
+#Fetch all data for all relevant snps
+snpQuantifs=[
+             {'type':'call', 'origfile':'GenotypesNum.tab'},
+             {'type':'freq', 'origfile':'GenotypesFreq.tab'},
+             {'type':'rcnt', 'origfile':'ReadCounts-ref.tab'},
+             {'type':'nrcnt', 'origfile':'ReadCounts-nref.tab'}
+             ]
+scanSourceFiles=False#True: scan original files (needed for new data, default for production)  |   False: scan previous digest (much faster, useful for development)
+        
+#Scan the sample genotypes and accumulate information for the relevant snps
+sampleIds=None
+for quantif in snpQuantifs:
+    if scanSourceFiles:
+        f=open(sourcedir+'/OriginalData/'+quantif['origfile'],'r')
+        of=open(sourcedir+'/ActiveSnpSampleInfo_'+quantif['type']+'.txt','w')
+    else:
+        f=open(sourcedir+'/ActiveSnpSampleInfo_'+quantif['type']+'.txt','r')
+    print('\n\nSCANNING SAMPLE GENOTYPE DATA '+quantif['origfile'])    
+    sampleOffset=4
+    snpCol=3
+    line=f.readline()
+    if scanSourceFiles:
+        of.write(line)
+    line=line.rstrip()
+    sampleIds=line.split('\t')[sampleOffset:]
+    print(str(sampleIds))
+    linenr=0
+    for line in f:
+        cells=line.rstrip().split('\t')
+        snpid=cells[snpCol]
+        data=cells[sampleOffset:]
+        if snpid in usedSnps:
+            if scanSourceFiles:
+                of.write(line)
+            usedSnps[snpid][quantif['type']]=data
+        linenr+=1
+        if linenr%1000==0: print(linenr)
+        #if linenr>200: break
+    f.close()
+    if scanSourceFiles:
+        of.close()
+        
+        
+#sys.exit()
+
+
+
+
+
+
+#Iterate over all samples and calculate haplotypes
+outputUnmatched=open(sourcedir+'/UnmatchedHaplotypes.txt','w')
+outputMixed=open(sourcedir+'/MixedHaplotypes.txt','w')
+for snpid in snpList:
+    outputUnmatched.write('\t'+snpid)
+outputUnmatched.write('\n')
+
+def CalcMixedHaplotype(locusInfo,haploFreqs):
+    outputMixed.write(sampleIds[sampleNr])
+    outputMixed.write('\t'+sampleHaplo)
+    outputMixed.write('\t'+transl.Nucl2Amino(sampleHaplo,kodonOffset))
+    for snpid in snpList:
+        outputMixed.write('\t'+str(round(float(sampleSnpInfo_Freq[snpid]),3)))
+    chromId=locusInfo['ChromosomeId']
+    posFirst=int(locusInfo['PositionFirst'])
+    posLast=int(locusInfo['PositionLast'])
+    refSeq=refGenome.GetRange(chromId,posFirst,posLast-posFirst+1)#start by assigning the haplotype to the reference sequence
+    haploList=[]
+    for haplotype in haplotypes:
+        if locusInfo['Id']==haplotype['LocusId']:
+            refDeviations=[]
+            for posit in range(len(refSeq)):
+                refDeviations.append(int(refSeq[posit]!=haplotype['Sequence'][posit]))
+            haplotype['RefDeviations']=refDeviations
+            haploList.append(haplotype)
+    print(str(haploList))
+    hits=[]
+    for haploNr1 in range(len(haplotypes)):
+        for haploNr2 in range(haploNr1):
+            haplo1=haplotypes[haploNr1]
+            haplo2=haplotypes[haploNr2]
+            #estimate fraction of haplo2
+            frac2=0
+            frac2count=0
+            for posit in range(len(refSeq)):
+                if haplo1['RefDeviations'][posit]!=haplo2['RefDeviations'][posit]:
+                    if haplo2['RefDeviations'][posit]:
+                        frac2+=haploFreqs[posit]
+                    else:
+                        frac2+=1-haploFreqs[posit]
+                    frac2count+=1
+            frac2/=frac2count
+            #calculate distortion
+            lsq=0
+            for posit in range(len(refSeq)):
+                estimFrac=(1-frac2)*haplo1['RefDeviations'][posit]+frac2*haplo2['RefDeviations'][posit]
+                lsq+=math.fabs(estimFrac-haploFreqs[posit])
+            hits.append({'haplo1':haplo1, 'haplo2':haplo2, 'frac2':frac2, 'lsq':lsq})
+            #print(haplo1['Name']+' '+haplo2['Name']+' '+str(frac2)+' '+str(lsq))
+    hits=sorted(hits, key=lambda el: el['lsq'])
+#    for i in range(5):
+#        outputMixed.write(hits[i]['haplo1']['Name']+'\t'+hits[i]['haplo2']['Name']+'\t'+'%0.3f'%hits[i]['frac2']+'\t'+'%0.7f'%hits[i]['lsq']+'\n')
+    mixedCall=hits[0]['haplo1']['Name']+'+'+hits[0]['haplo2']['Name']
+    if hits[0]['lsq']>6*0.05:
+        mixedCall='???'
+    if hits[0]['lsq']>0.5*hits[1]['lsq']:
+        mixedCall='???'
+    outputMixed.write('\t'+mixedCall)
+    outputMixed.write('\t'+('%0.3lf'%hits[0]['frac2']))
+    outputMixed.write('\t'+('%0.7lf'%hits[0]['lsq']))
+    outputMixed.write('\t'+('%0.3lf'%(hits[0]['lsq']/hits[1]['lsq'])))
+    outputMixed.write('\n')
+
+
+newHaplotypes={}
+incompleteCount=0
+totalCount=0
+for sampleNr in range(len(sampleIds)):
+    sampleSnpInfo_Call={snpid:usedSnps[snpid]['call'][sampleNr] for snpid in usedSnps}
+    sampleSnpInfo_Freq={snpid:usedSnps[snpid]['freq'][sampleNr] for snpid in usedSnps}
+    sampleSnpInfo_RefCount={snpid:usedSnps[snpid]['rcnt'][sampleNr] for snpid in usedSnps}
+    sampleSnpInfo_NonRefCount={snpid:usedSnps[snpid]['nrcnt'][sampleNr] for snpid in usedSnps}
+    for snpid in usedSnps:
+        if sampleSnpInfo_Call[snpid]=='0':
+            usedSnps[snpid]['missingcount']+=1
+    print('--------------------------------------------------')
+    print(sampleIds[sampleNr]+': '+str(sampleSnpInfo_Call))
+    print(sampleIds[sampleNr]+': '+str(sampleSnpInfo_Freq))
+    for locus in haplotypeLoci:
+        haplotypeId=locus['Id']
+        print(haplotypeId)
+        chromId=locus['ChromosomeId']
+        posFirst=int(locus['PositionFirst'])
+        posLast=int(locus['PositionLast'])
+        kodonOffset=int(locus['KodonOffset'])
+        
+        #ASSEMBLE THE HAPLOTYPE
+        sampleHaplo=refGenome.GetRange(chromId,posFirst,posLast-posFirst+1)#start by assigning the haplotype to the reference sequence
+        sampleHaploFreqs=[0]*len(sampleHaplo)
+        #apply all the snp conditions in this range= gives observed haplotype
+        snplist=haplotypeSnpList[haplotypeId]
+        totalCount+=1
+        valid=True
+        for snp in snplist:
+            snpid=snp['snpid']
+            posit=snp['pos']-posFirst
+            if sampleSnpInfo_Call[snpid]=='0': valid=False
+            else:
+                sampleHaploFreqs[posit]=float(sampleSnpInfo_Freq[snpid])
+                if sampleSnpInfo_Call[snpid]=='2':
+                    sampleHaplo=sampleHaplo[:posit]+snp['nonref']+sampleHaplo[posit+1:]
+        if valid:
+            print(sampleHaplo)
+            print(str(sampleHaploFreqs))
+            mixedness=max([min(x,1-x) for x in sampleHaploFreqs])
+            #look up the haplotype
+            matchedHaplotype=''
+            for haplotype in haplotypes:
+                if haplotypeId==haplotype['LocusId']:
+                    seqHaplo=haplotype['Sequence']
+                    if seqHaplo==sampleHaplo:#!!!todo: replace this with a regular-expression(style) match for haplotype patterns
+                        matchedHaplotype=haplotype['Name']
+            if matchedHaplotype:
+                print(matchedHaplotype)
+            else:
+                print('***UNMATCHED HAPLOTYPE***')
+                newKey=(haplotypeId,sampleHaplo)
+                if not(newKey in newHaplotypes):
+                    newHaplotypes[newKey]={'count':0}
+                    newHaplotypes[newKey]['aminoseq']=transl.Nucl2Amino(sampleHaplo,kodonOffset)
+                newHaplotypes[newKey]['count']+=1
+                outputUnmatched.write(sampleIds[sampleNr])
+                outputUnmatched.write('\t'+sampleHaplo)
+                outputUnmatched.write('\t'+transl.Nucl2Amino(sampleHaplo,kodonOffset))
+                for snpid in snpList:
+                    outputUnmatched.write('\t'+str(round(float(sampleSnpInfo_Freq[snpid]),3)))
+                for snpid in snpList:
+                    outputUnmatched.write('\t'+sampleSnpInfo_RefCount[snpid]+'|'+sampleSnpInfo_NonRefCount[snpid])
+                outputUnmatched.write('\n')
+            if mixedness>0.005:
+                CalcMixedHaplotype(locus,sampleHaploFreqs)
+        else:
+            print('***Incomplete***')
+            incompleteCount+=1
+
+print('Total: '+str(totalCount))
+print('Incomplete: '+str(incompleteCount))
+outputUnmatched.close()
+outputMixed.close()
+
+print('Missing snps')
+for snpid in usedSnps:
+    print(snpid+' '+str(usedSnps[snpid]['missingcount']))
+
+
+print('\n\nNEW HAPLOTYPES')
+for newtype in newHaplotypes:
+    locusId=newtype[0]
+    seq=newtype[1]
+    print(locusId+' '+seq+' '+newHaplotypes[newtype]['aminoseq']+' '+str(newHaplotypes[newtype]['count']))
+
+print('\n\nfinished')
