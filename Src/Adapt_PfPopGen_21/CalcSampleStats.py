@@ -75,3 +75,18 @@ for aggrNr in tableAggregations.GetRowNrRange():
 
 fileStudiesCount.close()
 fileSitesCount.close()
+
+fileStudyContexts=open(meta['SOURCEDIR']+'/StudyContexts.tab','w')
+fileStudyContexts.write('Study\tSite\tCount\n')
+studycontexts={}
+for sampleID in sampleData.GetSampleIDs():
+    if sampleData.GetSampleInfo(sampleID, 'Exclude')=='FALSE':
+        study=sampleData.GetSampleInfo(sampleID,'Study')
+        site=sampleData.GetSampleInfo(sampleID,'Site')
+        studycontext=(study,site)
+        if studycontext not in studycontexts:
+            studycontexts[studycontext]=0
+        studycontexts[studycontext]+=1
+for studycontext in studycontexts:
+    fileStudyContexts.write('{0}\t{1}\t{2}\n'.format(studycontext[0],studycontext[1],studycontexts[studycontext]))
+fileStudyContexts.close()
