@@ -10,12 +10,13 @@ meta={
       'DBUSER':'root',
       'DBPASS':'1234',
       'DB':'world',
-      'SOURCEDIR':'C:/Data/Genomes/PlasmodiumFalciparum/Release_21'
+      'SOURCEDIR':'C:/Data/Genomes/PlasmodiumFalciparum/Release_21',
+      'ORIGDIR':'OriginalData_01'
       }
 
 if False:
     lst=['107450','107451','107452','107453','107454','107455','107456','107457']
-    f=open('C:/Data/Genomes/PlasmodiumFalciparum/Release_21/OriginalData/ReadCounts-nref.tab')
+    f=open('C:/Data/Genomes/PlasmodiumFalciparum/Release_21/{0}/ReadCounts-nref.tab'.format(meta['ORIGDIR']))
     print(f.readline().rstrip())
     for line in f:
         line=line.rstrip()
@@ -95,7 +96,7 @@ def ReportMissing():
     
     
 
-
+#Returns a string that highlights the difference between two strings of equal length
 def CreateDifferenceMask(st1,st2):
     if len(st1)!=len(st2):
         raise Exception('Incompatible string lengths ({0}-{1}'.format(st1,st2))
@@ -107,6 +108,7 @@ def CreateDifferenceMask(st1,st2):
             rs.append('^')
     return ''.join(rs)
 
+#A class that translates nucleic acid sequences into aminoacid sequencies (currently using the standard translation table)
 class SequenceTranslator:
     def __init__(self):
         #the following is the standard translation table:
@@ -127,7 +129,7 @@ class SequenceTranslator:
             ps+=3
         return ''.join(rs)
         
-
+#A class that contains the nucleic acid sequences for a set of chromosomes
 class Genome:
     def __init__(self):
         self.sequences={}
@@ -152,6 +154,7 @@ class Genome:
         if not(seqId in self.sequences):
             raise Exception('Invalid fasta file sequence index '+seqId)
         return self.sequences[seqId][pos-1:pos-1+length]
+
 
 class CallingError(Exception):
     def __init__(self, tpe, msg):
@@ -278,15 +281,6 @@ class HaplotypeLocus:
             fle.write('\t'+err['frequencies'])
             fle.write('\t'+err['coverages'])
             fle.write('\n')
-        
-            
-#    def GetMissingGenotypePositions(self,SampleGenoTypeInfo):
-#        missinglist=[]
-#        for snp in self.ObservedSNPList:
-#            if snp.Position in self.Positions2Index:
-#                if not SampleGenoTypeInfo[snp.Id].IsPresent:
-#                    missinglist.append(snp.Id)
-#        return missinglist
             
     #Converts genotype info for a single sample into a list of SNP info at the monitored haplotype positions
     def GenotypeInfo2PositionSNPs(self,SampleGenoTypeInfo):
@@ -370,7 +364,7 @@ class HaplotypeLocus:
         self.CountTotal+=1
         samplePositionInfo=self.GenotypeInfo2PositionSNPs(SampleGenoTypeInfo)
         resultList=[None]*len(self.variants)
-        StatDoAll(SampleGenoTypeInfo.sampleId)#Currenly a hack
+        StatDoAll(SampleGenoTypeInfo.sampleId)#Currently a bit of a hack
 
         try:
             #Print some basic info
@@ -485,12 +479,18 @@ class HaplotypeCaller:
         return result
 
 
+
+
+########################################################################################################################
+# START OF THE MAIN BODY
+########################################################################################################################
+
 #The one and only reader that reads the SNP info from a database table
 SnpInfoProvider=DataProviders.SNPInfoProvider_Database(meta)
 
 #The one and only reference genome
 refGenome=Genome()
-refGenome.ReadFASTA(meta['SOURCEDIR']+'/OriginalData/sequences.dat')
+refGenome.ReadFASTA(meta['SOURCEDIR']+'/{0}/sequences.dat'.format(meta['ORIGDIR']))
 transl=SequenceTranslator()
         
 #The one and only caller instance
@@ -526,6 +526,7 @@ for locusinfo in haplotypeLoci:
     
 caller.DumpData()
 
+
 #The one and only sample genotype data provider
 
 usedSnpMap={id:0 for id in caller.GlobalObservedSNPMap}
@@ -559,13 +560,18 @@ for sampleNr in range(len(SampleGenoTypeData.sampleIds)):
     genotypeInfo=SampleGenoTypeData.GetSampleGenoType(sampleNr)
     print('========= CALLING '+SampleGenoTypeData.sampleIds[sampleNr]+' ============================================================================================================');
     result=caller.Call(genotypeInfo)
-    resultFile.write(SampleGenoTypeData.sampleIds[sampleNr])
+    contribcount=0
     for rs in result:
-        if rs is None:
-            resultFile.write('\t'+'-')
-        else:
-            resultFile.write('\t'+'%0.4f'%rs)
-    resultFile.write('\n')
+        if rs>0:
+            contribcount+=1
+    if contribcount>1:
+        resultFile.write(SampleGenoTypeData.sampleIds[sampleNr])
+        for rs in result:
+            if rs is None:
+                resultFile.write('\t'+'-')
+            else:
+                resultFile.write('\t'+'%0.4f'%rs)
+        resultFile.write('\n')
     print('')
     
 resultFile.close()

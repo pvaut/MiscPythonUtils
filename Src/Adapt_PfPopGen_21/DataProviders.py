@@ -36,7 +36,7 @@ class SampleInfoProvider:
         self.meta=imeta
         self.table=VTTable.VTTable()
         self.table.allColumnsText=True
-        self.table.LoadFile(self.meta['SOURCEDIR']+'/OriginalData/metadata-2.0.2_withsites.txt')
+        self.table.LoadFile(self.meta['SOURCEDIR']+'/{0}/metadata-2.0.2_withsites.txt'.format(self.meta['ORIGDIR']))
         self.sampleIndex=self.table.BuildColDict("Sample",False)
         self.sampleIDs=[self.table.GetValue(rownr,'Sample') for rownr in self.table.GetRowNrRange()]
     def GetSampleIDs(self):
@@ -88,7 +88,7 @@ class SampleGenoTypeProvider_TabFile:
         self.sampleIds=None
         for quantif in self.snpQuantifs:
             if self.scanSourceFiles:
-                f=open(self.meta['SOURCEDIR']+'/OriginalData/'+quantif['origfile'],'r')
+                f=open(self.meta['SOURCEDIR']+'/'+meta['ORIGDIR']+'/'+quantif['origfile'],'r')
                 of=open(self.meta['SOURCEDIR']+'/ActiveSnpSampleInfo_'+quantif['type']+'.txt','w')
             else:
                 f=open(self.meta['SOURCEDIR']+'/ActiveSnpSampleInfo_'+quantif['type']+'.txt','r')
