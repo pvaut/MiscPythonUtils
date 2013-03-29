@@ -88,6 +88,18 @@ class VTTable:
         del self.Columns[self.GetColNr(ColName)]['data'][:]
         for i in range(0,rowcount):
             self.Columns[self.GetColNr(ColName)]['data'].append(Val)
+            
+    def ArrangeColumns(self,SortedList):
+        ColList=self.GetColList()
+        for col in SortedList:
+            if col not in ColList:
+                raise Exception('Invalid column name '+col)
+        for col in ColList:
+            if col not in SortedList:
+                SortedList.append(col)
+        self.Columns=[self.Columns[self.GetColNr(col)] for col in SortedList]
+        self.BuildColIndex()
+
 
         
     def LoadFile(self, filename, maxrowcount=-1, TreatSpacesAsTabs=False):
