@@ -476,3 +476,29 @@ class VTTable:
         data=self.Columns[self.GetColNr(ColName)]['data']
         for i in range(0,len(data)):
             data[i]=MapFunction(data[i])
+            
+    def ColumnRemoveQuotes(self,ColName):
+        data=self.Columns[self.GetColNr(ColName)]['data']
+        for i in range(0,len(data)):
+            str=data[i]
+            if (len(str)>=2) and (str[0]=='"') and (str[len(str)-1]=='"'):
+                str=str[1:len(str)-1]
+                data[i]=str
+                
+    def RemoveRow(self,RowNr):
+        if (RowNr<0) or (RowNr>=self.GetRowCount):
+            raise Exception('Invalid row number') 
+        for colnr in range(0,self.GetColCount()):
+            del self.Columns[colnr]['data'][RowNr]
+        
+    def RemoveEmptyRows(self):
+        RowNr=0;
+        while RowNr<self.GetRowCount():
+            IsEmpty=True
+            for ColNr in range(self.GetColCount()):
+                if len(str(self.GetValue(RowNr,ColNr)))>0:
+                    IsEmpty=False
+            if IsEmpty:
+                self.RemoveRow(RowNr)
+            else:
+                RowNr+=1
