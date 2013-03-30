@@ -257,5 +257,10 @@ for classifID in tableCountsPopulations.GetColStateList('Pop'):
 #        raise Exception('Invalid locus ID '+locusID)
 
 
+tableGenes.SaveFile(basedir+'/Output/pf21genesinfo.txt', True, '')
+tableLoci.SaveFile(basedir+'/Output/pf21loci.txt', True, '')
+tableLociVariants.SaveFile(basedir+'/Output/pf21locivariants.txt', True, '')
+tableClassifications.SaveFile(basedir+'/Output/sample_classification.txt', True, '')
+tableCounts.SaveFile(basedir+'/Output/pf21locusfreqs.txt', True, '')
 
 print('finished')
