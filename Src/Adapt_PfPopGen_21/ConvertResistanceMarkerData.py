@@ -1,6 +1,7 @@
 from TableUtils import VTTable
+import sys
 
-basedir = 'C:/Data/Genomes/PlasmodiumFalciparum/Release_21/OriginalData_03'
+basedir = 'C:/Data/Genomes/PlasmodiumFalciparum/Release_21/OriginalData_04'
 
 
 #-------------------------------------------------------------------------
@@ -170,8 +171,91 @@ tableLoci=VTTable.VTTable()
 tableLoci.CopyFrom(tableHaplotypes)
 tableLoci.Append(tableAminoAcids)
 
-tableLociVariants.PrintRows(0,99999)
-tableLoci.PrintRows(0,99999)
+tableLociVariants.PrintRows(0,10)
+tableLoci.PrintRows(0,10)
 
 #Some integrity checks
 locusMap=tableLoci.BuildColDict('LocusID', False)
+lociList=tableLociVariants.GetColStateList('LocusID')
+for locusID in lociList:
+    if locusID not in locusMap:
+        raise Exception('Invalid locus ID '+locusID)
+
+
+#################################################################################################################
+# LOAD CLASSIFICATIONS
+#################################################################################################################
+
+tablePopulations=VTTable.VTTable()
+tablePopulations.allColumnsText=True
+tablePopulations.LoadFile(basedir+"/Definition-Populations.tab")
+tablePopulations.RemoveEmptyRows()
+tablePopulations.AddColumn(VTTable.VTColumn('sample_classification_type','Text'))
+tablePopulations.FillColumn('sample_classification_type','subcont')
+
+tableRegions=VTTable.VTTable()
+tableRegions.allColumnsText=True
+tableRegions.LoadFile(basedir+"/Definition-Regions.tab")
+tableRegions.RemoveEmptyRows()
+tableRegions.AddColumn(VTTable.VTColumn('sample_classification_type','Text'))
+tableRegions.FillColumn('sample_classification_type','region')
+
+tableClassifications=VTTable.VTTable()
+tableClassifications.CopyFrom(tablePopulations)
+tableClassifications.Append(tableRegions)
+tableClassifications.RenameCol('Name','name')
+tableClassifications.RenameCol('ID','sample_classification')
+tableClassifications.ArrangeColumns(['name','sample_classification','sample_classification_type','longit','lattit'])
+tableClassifications.AddColumn(VTTable.VTColumn('geo_json','Text'))
+tableClassifications.FillColumn('geo_json','')
+classificationMap=tableClassifications.BuildColDict('sample_classification', False)
+
+
+#tableGenes.ColumnRemoveQuotes('Comments')
+tableClassifications.PrintRows(0,10)
+
+
+#################################################################################################################
+# LOAD COUNT INFORMATION
+#################################################################################################################
+
+tableCountsPopulations=VTTable.VTTable()
+tableCountsPopulations.allColumnsText=True
+tableCountsPopulations.LoadFile(basedir+"/Populations-CompositeGenotypes-Counts.tab")
+tableCountsPopulations.RemoveEmptyRows()
+tableCountsPopulations.AddColumn(VTTable.VTColumn('AggregTypeID','Text'))
+tableCountsPopulations.FillColumn('AggregTypeID','subcont')
+
+tableCountsRegions=VTTable.VTTable()
+tableCountsRegions.allColumnsText=True
+tableCountsRegions.LoadFile(basedir+"/Regions-CompositeGenotypes-Counts.tab")
+tableCountsRegions.RemoveEmptyRows()
+tableCountsRegions.AddColumn(VTTable.VTColumn('AggregTypeID','Text'))
+tableCountsRegions.FillColumn('AggregTypeID','region')
+
+tableCounts=VTTable.VTTable()
+tableCounts.CopyFrom(tableCountsPopulations)
+tableCounts.Append(tableCountsRegions)
+tableCounts.RenameCol('Pop','AggregShortName')
+tableCounts.RenameCol('Variation','LocusID')
+tableCounts.RenameCol('Allele','VariantID')
+tableCounts.ArrangeColumns(['AggregTypeID','AggregShortName','LocusID','VariantID','Count'])
+tableCounts.DropCol('Type')
+
+
+tableCounts.PrintRows(0,10000)
+
+
+for classifID in tableCountsPopulations.GetColStateList('Pop'):
+    if classifID not in classificationMap:
+        raise Exception('Invalid classification ID '+classifID)
+
+
+#Integrity tests
+#for locusID in tableCountsPopulations.GetColStateList('Variation'):
+#    if locusID not in locusMap:
+#        raise Exception('Invalid locus ID '+locusID)
+
+
+
+print('finished')
