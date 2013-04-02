@@ -115,6 +115,8 @@ tableAminoAcids.MergeColsToString('Name','{0}','LocusID')
 tableAminoAcids.ArrangeColumns(['LocusID','ordr','GenomicRegion','LocusType','GeneName','Name','Comments'])
 tableAminoAcids.DropCol('Aa')
 tableAminoAcids.DropCol('Nt')
+#Offset aminoacids so that they appear after haplotypes
+tableAminoAcids.MapCol('ordr',lambda st: str(float(st)+100))
 
 #Rename columns of AminoAlleles
 tableAminoAlleles.RenameCol('Num','ordr')
@@ -148,6 +150,7 @@ tableHaplotypeAlleles.AddColumn(VTTable.VTColumn('Color','Text'))
 tableHaplotypeAlleles.FillColumn('Color','Auto')
 tableHaplotypeAlleles.ArrangeColumns(['LocusID','VariantID','ordr','Mutant','Name','Color','Comments'])
 tableHaplotypeAlleles.DropCol('Composition')
+
 
 #-------------------------------------------------------------------------
 #print('\nGenes')
@@ -192,6 +195,7 @@ tablePopulations.LoadFile(basedir+"/Definition-Populations.tab")
 tablePopulations.RemoveEmptyRows()
 tablePopulations.AddColumn(VTTable.VTColumn('sample_classification_type','Text'))
 tablePopulations.FillColumn('sample_classification_type','subcont')
+tablePopulations.AddIndexCol('ordr')
 
 tableRegions=VTTable.VTTable()
 tableRegions.allColumnsText=True
@@ -199,13 +203,15 @@ tableRegions.LoadFile(basedir+"/Definition-Regions.tab")
 tableRegions.RemoveEmptyRows()
 tableRegions.AddColumn(VTTable.VTColumn('sample_classification_type','Text'))
 tableRegions.FillColumn('sample_classification_type','region')
+tableRegions.AddIndexCol('ordr')
+tableRegions.MapCol('ordr',lambda x:x+100)
 
 tableClassifications=VTTable.VTTable()
 tableClassifications.CopyFrom(tablePopulations)
 tableClassifications.Append(tableRegions)
 tableClassifications.RenameCol('Name','name')
 tableClassifications.RenameCol('ID','sample_classification')
-tableClassifications.ArrangeColumns(['name','sample_classification','sample_classification_type','longit','lattit'])
+tableClassifications.ArrangeColumns(['ordr','name','sample_classification','sample_classification_type','longit','lattit'])
 tableClassifications.AddColumn(VTTable.VTColumn('geo_json','Text'))
 tableClassifications.FillColumn('geo_json','')
 classificationMap=tableClassifications.BuildColDict('sample_classification', False)
@@ -257,7 +263,7 @@ for classifID in tableCountsPopulations.GetColStateList('Pop'):
 #        raise Exception('Invalid locus ID '+locusID)
 
 
-tableGenes.SaveFile(basedir+'/Output/pf21genesinfo.txt', True, '')
+tableGenes.SaveFile(basedir+'/Output/pf21geneinfo.txt', True, '')
 tableLoci.SaveFile(basedir+'/Output/pf21loci.txt', True, '')
 tableLociVariants.SaveFile(basedir+'/Output/pf21locivariants.txt', True, '')
 tableClassifications.SaveFile(basedir+'/Output/sample_classification.txt', True, '')

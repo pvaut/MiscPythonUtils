@@ -219,6 +219,12 @@ class VTTable:
         if not(ColName in self.ColIndex): raise Exception('Column {0} is not present in the table'.format(ColName))
         return(self.ColIndex[ColName])
     
+    def IsColumnPresent(self, ColName):
+        return (ColName in self.ColIndex)
+    
+    def GetColInfo(self,ColName):
+        return self.Columns[self.GetColNr(ColName)]['info']
+    
     def GetColList(self):
         return([col['info'].Name for col in self.Columns])
     
@@ -445,7 +451,7 @@ class VTTable:
                 coldatanew.append(None)
     
     def AddIndexCol(self,ColName):
-        data=self.AddColumn(ColName,0)['data']
+        data=self.AddColumn(VTColumn(ColName,'Value'))['data']
         for i in range(0,self.GetRowCount()):
             data.append(i)
         
