@@ -125,13 +125,16 @@ class VTTable:
                 cells=line.split('\t')
                 for i in range(0,len(self.Columns)):
                     thecol=self.Columns[i]
-                    if thecol['info'].IsValue():
-                        if (cells[i]=='NA') or (cells[i]=='') or (cells[i]=='None') or (cells[i]=='NULL') or (cells[i]=='null'):
-                            thecol['data'].append(None)
-                        else:
-                            thecol['data'].append(float(cells[i]))
-                    if thecol['info'].IsText():
-                        thecol['data'].append(cells[i])
+                    if i<len(cells):
+                        if thecol['info'].IsValue():
+                            if (cells[i]=='NA') or (cells[i]=='') or (cells[i]=='None') or (cells[i]=='NULL') or (cells[i]=='null'):
+                                thecol['data'].append(None)
+                            else:
+                                thecol['data'].append(float(cells[i]))
+                        if thecol['info'].IsText():
+                            thecol['data'].append(cells[i])
+                    else:
+                        thecol['data'].append(None)
                 linecount+=1
                 if linecount%10000==0: print("   "+str(linecount))
                 if (maxrowcount>0) and (linecount>=maxrowcount): break
@@ -231,6 +234,9 @@ class VTTable:
     def GetValue(self, rownr, colnr):
         if type(colnr)==str:
             colnr=self.GetColNr(colnr)
+#        if rownr>=len(self.Columns[colnr]['data']):
+#            print('Problem with row '+str(rownr))
+#            print(str(self.Columns[colnr]))
         return self.Columns[colnr]['data'][rownr]
     
     def SetValue(self, rownr, colnr, val):
@@ -437,7 +443,7 @@ class VTTable:
     def CalcCol(self, NewColName, Function, *ArgColNames):
         colargdata=[]
         for arg in ArgColNames: colargdata.append(self.Columns[self.GetColNr(arg)]['data'])
-        self.AddColumn(NewColName,0)
+        self.AddColumn(VTColumn(NewColName,'Text'))
         coldatanew=self.Columns[self.GetColNr(NewColName)]['data']
         for i in range(0,self.GetRowCount()):
             argdata=[arg[i] for arg in colargdata]
@@ -460,6 +466,15 @@ class VTTable:
         for val in self.Columns[self.GetColNr(ColName)]['data']:
             states[val]=1
         return([state for state in states])
+    
+    def GetColStateCountList(self, ColName):
+        states={}
+        for val in self.Columns[self.GetColNr(ColName)]['data']:
+            if val not in states:
+                states[val]=0
+            states[val]+=1
+        return states
+    
     
     def CreateAggregate(self, AggregateIDFunction, AggregateColumns):
         Result=VTTable()
