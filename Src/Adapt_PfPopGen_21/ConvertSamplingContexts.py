@@ -40,6 +40,8 @@ while RowNr<tableSamples.GetRowCount():
         
 tableSamples.MergeColsToString('SampleContext','{0}_{1}','Study','SiteCode')
 
+print('Countries: '+str(tableSamples.GetColStateCountList('Country')))
+
 tableSamples.PrintRows(0,10)
 
 #-------------------------------------------------------------------------
