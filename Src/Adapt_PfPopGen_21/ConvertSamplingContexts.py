@@ -23,7 +23,21 @@ tableSamples.DropCol('KhCluster')
 tableSamples.DropCol('Region')
 tableSamples.DropCol('Fws')
 tableSamples.DropCol('Year')
+tableSamples.PrintRows(0,10)
 
+
+#-------------------------------------------------------------------------
+tableSites=VTTable.VTTable()
+tableSites.allColumnsText=True
+tableSites.LoadFile(basedir+"/SitesInfo.txt")
+tableSites.DropCol('Latitude')
+tableSites.DropCol('Longitude')
+tableSites.DropCol('GeoCode')
+tableSites.DropCol('SubCont')
+tableSites.DropCol('Description')
+tableSites.ColumnRemoveQuotes('Name')
+tableSites.PrintRows(0,10)
+indexSites= tableSites.BuildColDict('ID', False)
 
 
 #tableSamples.RemoveEmptyRows()
@@ -43,6 +57,48 @@ tableSamples.MergeColsToString('SampleContext','{0}_{1}','Study','SiteCode')
 print('Countries: '+str(tableSamples.GetColStateCountList('Country')))
 
 tableSamples.PrintRows(0,10)
+
+print("**** WARNING: TODO: CREATE SAMPLE CONTEXTS DYNAMICALLY FROM STYDIES & SITES RATHER THAN TAKING FROM TABLE")
+
+
+########################################################################################################"
+# Sample sample contexts
+########################################################################################################"
+
+tableSampleContexts=VTTable.VTTable()
+tableSampleContexts.AddColumn(VTTable.VTColumn('study','Text'))
+tableSampleContexts.AddColumn(VTTable.VTColumn('location','Text'))
+tableSampleContexts.AddColumn(VTTable.VTColumn('sample_context','Text'))
+tableSampleContexts.AddColumn(VTTable.VTColumn('description','Text'))
+tableSampleContexts.AddColumn(VTTable.VTColumn('title','Text'))
+tableSampleContexts.AddColumn(VTTable.VTColumn('samplecount','Value'))
+
+
+sampleContextCounts = tableSamples.GetColStateCountList("SampleContext")
+#print("Sample context counts: "+str(sampleContextCounts))
+for sampleContextID in sampleContextCounts:
+    studyID=sampleContextID.split('_',1)[0]
+    siteID=sampleContextID.split('_',1)[1]
+    #print(studyID+' '+siteID)
+    if siteID not in indexSites:
+        raise Exception('Invalid site id '+siteID)
+    tableSampleContexts.AddRowEmpty()
+    RowNr=tableSampleContexts.GetRowCount()-1
+    tableSampleContexts.SetValue(RowNr,tableSampleContexts.GetColNr('study'),studyID)
+    tableSampleContexts.SetValue(RowNr,tableSampleContexts.GetColNr('location'),siteID)
+    tableSampleContexts.SetValue(RowNr,tableSampleContexts.GetColNr('sample_context'),sampleContextID)
+    tableSampleContexts.SetValue(RowNr,tableSampleContexts.GetColNr('description'),'')
+    tableSampleContexts.SetValue(RowNr,tableSampleContexts.GetColNr('title'),tableSites.GetValue(indexSites[siteID],tableSites.GetColNr('Name')))
+    tableSampleContexts.SetValue(RowNr,tableSampleContexts.GetColNr('samplecount'),sampleContextCounts[sampleContextID])
+
+tableSampleContexts.PrintRows(0,100000)
+tableSampleContexts.SaveFile(basedir+'/Output/sample_context.txt', True, '')
+#sys.exit()
+
+
+########################################################################################################"
+# Sample classifications x sample contexts
+########################################################################################################"
 
 #-------------------------------------------------------------------------
 tableSampleGroups=VTTable.VTTable()
