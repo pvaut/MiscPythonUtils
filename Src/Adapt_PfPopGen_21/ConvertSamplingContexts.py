@@ -22,9 +22,12 @@ tableSites.RenameCol('Description','description')
 tableSites.RenameCol('Country','country')
 tableSites.RenameCol('Name','name')
 tableSites.RenameCol('ID','location')
+tableSites.ConvertColToValue('lattit')
+tableSites.ConvertColToValue('longit')
 tableSites.ArrangeColumns(['lattit','description','country','location','longit','name'])
 tableSites.PrintRows(0,10)
 tableSites.SaveFile(basedir+'/Output/location.txt', True, '')
+tableSites.SaveSQLDump(basedir+'/Output/location.sql','location')
 
 #-------------------------------------------------------------------------
 tableSamples=VTTable.VTTable()
@@ -115,6 +118,7 @@ for sampleContextID in sampleContextCounts:
 
 tableSampleContexts.PrintRows(0,100000)
 tableSampleContexts.SaveFile(basedir+'/Output/sample_context.txt', True, '')
+tableSampleContexts.SaveSQLDump(basedir+'/Output/sample_context.sql','sample_context')
 #sys.exit()
 
 

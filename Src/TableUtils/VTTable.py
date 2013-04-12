@@ -167,6 +167,61 @@ class VTTable:
         f.close()
         print('Finished Saving table {0} ({1} rows)'.format(filename,linecount))
         
+    def SaveSQLDump(self, filename, tablename):
+        
+        def DecoId(id):
+            return '`'+id+'`'
+        
+        print('Saving SQL dump '+filename)
+        f=open(filename,'w')
+        
+        f.write('DELETE FROM {0};\n'.format(DecoId(tablename)))
+        f.write('LOCK TABLES {0} WRITE;\n'.format(DecoId(tablename)))
+        f.write('SET SQL_SAFE_UPDATES=0;\n')
+
+        
+        colIsString=[self.Columns[colnr]['info'].IsText() for colnr in range(self.GetColCount())]
+        
+        blockSize=20
+        blockStarted=False
+        
+        linecount=0
+        for rownr in range(0,self.GetRowCount()):
+            if not(blockStarted):
+                f.write('INSERT INTO {0} ({1}) VALUES '.format(DecoId(tablename),', '.join([DecoId(col) for col in self.GetColList()])))
+                blockStarted=True;
+                blockNr=0
+            lineStr=''
+            for colnr in range(0,len(self.Columns)):
+                if colnr>0: lineStr+=','
+                val=self.Columns[colnr]['data'][rownr]
+                if (val is None):
+                    f.write('None')
+                else:
+                    if colIsString[colnr]:
+                        val=val.replace("'","\\'") 
+                        val=val.replace('\r\n','\\n') 
+                        val=val.replace('\n\r','\\n') 
+                        lineStr += '\''
+                        lineStr += val
+                        if colIsString[colnr]: lineStr += '\''
+                    else:
+                        lineStr += str(val)
+            if blockNr>0: f.write(',')
+            f.write('('+lineStr + ')')
+            blockNr += 1
+            if blockNr>=blockSize:
+                f.write(';\n')
+                blockStarted=False
+            linecount+=1
+            if linecount%10000==0: print("   "+str(linecount))
+        if blockStarted:
+            f.write(';\n')
+        f.write('UNLOCK TABLES;\n')
+        f.close()
+        print('Finished Saving SQL dump {0} ({1} rows)'.format(filename,linecount))
+        
+        
     def PrintInfo(self):
         print('TABLE INFO Rowcount={0} ColumnCount={1}'.format(self.GetRowCount(),self.GetColCount()))
         for col in self.Columns:
