@@ -4,6 +4,28 @@ import sys
 basedir = 'C:/Data/Genomes/PlasmodiumFalciparum/Release_21/OriginalData_04'
 
 
+
+########################################################################################################"
+# Save locations
+########################################################################################################"
+
+#-------------------------------------------------------------------------
+tableSites=VTTable.VTTable()
+tableSites.allColumnsText=True
+tableSites.LoadFile(basedir+"/SitesInfo.txt")
+tableSites.DropCol('GeoCode')
+tableSites.DropCol('SubCont')
+tableSites.ColumnRemoveQuotes('Name')
+tableSites.RenameCol('Latitude','lattit')
+tableSites.RenameCol('Longitude','longit')
+tableSites.RenameCol('Description','description')
+tableSites.RenameCol('Country','country')
+tableSites.RenameCol('Name','name')
+tableSites.RenameCol('ID','location')
+tableSites.ArrangeColumns(['lattit','description','country','location','longit','name'])
+tableSites.PrintRows(0,10)
+tableSites.SaveFile(basedir+'/Output/location.txt', True, '')
+
 #-------------------------------------------------------------------------
 tableSamples=VTTable.VTTable()
 tableSamples.allColumnsText=True
@@ -62,7 +84,7 @@ print("**** WARNING: TODO: CREATE SAMPLE CONTEXTS DYNAMICALLY FROM STYDIES & SIT
 
 
 ########################################################################################################"
-# Sample sample contexts
+# Sample contexts
 ########################################################################################################"
 
 tableSampleContexts=VTTable.VTTable()
