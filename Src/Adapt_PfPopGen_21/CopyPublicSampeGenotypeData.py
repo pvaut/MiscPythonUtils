@@ -45,10 +45,10 @@ for fname in os.listdir(basedir):
     sampleid=st.split('.',1)[0]
     ext=st.split('.',1)[1]
     if sampleid in publicSamplesMap:
-	fileCount += 1
-	outputFileName = chromid+'_'+hash(sampleid)+'.'+ext
-	print(fname+' '+chromid+' '+sampleid+' '+ext+'  ->  '+outputFileName)
-	shutil.copyfile(basedir+'/'+fname,outputdir+'/'+outputFileName)
+        fileCount += 1
+        outputFileName = chromid+'_'+hash(sampleid)+'.'+ext
+        print(fname+' '+chromid+' '+sampleid+' '+ext+'  ->  '+outputFileName)
+        shutil.copyfile(basedir+'/'+fname,outputdir+'/'+outputFileName)
 
 
 print('Files: '+str(fileCount))

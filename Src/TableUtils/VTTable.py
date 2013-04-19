@@ -1,4 +1,5 @@
 import math
+import string
 
 VERYSMALL= -1.0e199
 VERYLARGE= +1.0e199
@@ -175,9 +176,9 @@ class VTTable:
         print('Saving SQL dump '+filename)
         f=open(filename,'w')
         
-        f.write('DELETE FROM {0};\n'.format(DecoId(tablename)))
-        f.write('LOCK TABLES {0} WRITE;\n'.format(DecoId(tablename)))
         f.write('SET SQL_SAFE_UPDATES=0;\n')
+        f.write('LOCK TABLES {0} WRITE;\n'.format(DecoId(tablename)))
+        f.write('DELETE FROM {0};\n'.format(DecoId(tablename)))
 
         
         colIsString=[self.Columns[colnr]['info'].IsText() for colnr in range(self.GetColCount())]
@@ -199,6 +200,10 @@ class VTTable:
                     f.write('None')
                 else:
                     if colIsString[colnr]:
+                        val=val.replace("\x92","'")
+                        val=val.replace("\xC2","'")
+                        val=val.replace("\x91","'")
+                        #filter(lambda x: x in string.printable, val)
                         val=val.replace("'","\\'") 
                         val=val.replace('\r\n','\\n') 
                         val=val.replace('\n\r','\\n') 

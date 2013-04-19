@@ -4,6 +4,51 @@ import sys
 basedir = 'C:/Data/Genomes/PlasmodiumFalciparum/Release_21/OriginalData_04'
 
 
+########################################################################################################"
+# Process studies
+########################################################################################################"
+tableStudies=VTTable.VTTable()
+tableStudies.allColumnsText=True
+tableStudies.LoadFile(basedir+"/PartnerStudies.txt")
+tableStudies.ColumnRemoveQuotes('Description')
+tableStudies.ColumnRemoveQuotes('Study_title')
+tableStudies.DropCol('Triage')
+tableStudies.DropCol('MalariaGEN role included')
+tableStudies.DropCol('Notes')
+
+# Create map from internal study to public study
+dct=tableStudies.BuildColDict('Study',True)
+MapStudyPrivate2Public = { studyid : tableStudies.GetValue(dct[studyid], tableStudies.GetColNr('PublicStudy')) for studyid in dct }
+print('Private to public study map: '+str(MapStudyPrivate2Public))
+
+#remove studies that are private only
+RowNr=0
+while RowNr<tableStudies.GetRowCount():
+    studyid=tableStudies.GetValue(RowNr, tableStudies.GetColNr('Study'))
+    if MapStudyPrivate2Public[studyid] != studyid:
+        tableStudies.RemoveRow(RowNr)
+    else:
+        RowNr+=1
+
+tableStudies.MergeColsToString('title', '{0}. {1}','NumID','Study_title')
+        
+tableStudies.RenameCol('Study','study')
+tableStudies.RenameCol('Description','description')
+tableStudies.DropCol('NumID')
+tableStudies.DropCol('Study_title')
+tableStudies.DropCol('PublicStudy')
+tableStudies.AddColumn(VTTable.VTColumn('people','Text'))
+tableStudies.AddColumn(VTTable.VTColumn('full_study','Value'))
+tableStudies.FillColumn('people', '')
+tableStudies.FillColumn('full_study', 1)
+tableStudies.ArrangeColumns(['study','people','description','full_study','title'])
+tableStudies.PrintRows(0,9999)
+tableStudies.SaveFile(basedir+'/Output/study.txt', True, '')
+tableStudies.SaveSQLDump(basedir+'/Output/study.sql','study')
+        
+
+#sys.exit()
+
 
 ########################################################################################################"
 # Save locations
@@ -48,7 +93,7 @@ tableSamples.DropCol('KhCluster')
 tableSamples.DropCol('Region')
 tableSamples.DropCol('Fws')
 tableSamples.DropCol('Year')
-tableSamples.PrintRows(0,10)
+
 
 
 #-------------------------------------------------------------------------
@@ -76,6 +121,12 @@ while RowNr<tableSamples.GetRowCount():
         tableSamples.RemoveRow(RowNr)
     else:
         RowNr+=1
+        
+#Convert private study id's to public study id's
+tableSamples.MapCol('Study',lambda studyid : MapStudyPrivate2Public[studyid] )
+
+tableSamples.PrintRows(0,10)
+        
         
 tableSamples.MergeColsToString('SampleContext','{0}_{1}','Study','SiteCode')
 
@@ -163,3 +214,4 @@ tableContextClassif.ArrangeColumns(['sample_classification','sample_context','co
 tableContextClassif.PrintRows(0, 100000)
 
 tableContextClassif.SaveFile(basedir+'/Output/sample_classification_context_count.txt', True, '')
+tableContextClassif.SaveSQLDump(basedir+'/Output/sample_classification_context_count.sql','sample_classification_context_count')
