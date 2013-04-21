@@ -10,11 +10,24 @@ basedir = 'C:/Data/Genomes/PlasmodiumFalciparum/Release_21/OriginalData_04'
 tableStudies=VTTable.VTTable()
 tableStudies.allColumnsText=True
 tableStudies.LoadFile(basedir+"/PartnerStudies.txt")
+
+UseNewDescription=True
+
+if UseNewDescription:
+    tableStudies.DropCol('Previous_Title')
+    tableStudies.DropCol('Previous_Description')
+else:
+    tableStudies.DropCol('Study_title')
+    tableStudies.DropCol('Description')
+    tableStudies.RenameCol('Previous_Title','Study_title')
+    tableStudies.RenameCol('Previous_Description','Description')
+
 tableStudies.ColumnRemoveQuotes('Description')
 tableStudies.ColumnRemoveQuotes('Study_title')
 tableStudies.DropCol('Triage')
 tableStudies.DropCol('MalariaGEN role included')
 tableStudies.DropCol('Notes')
+    
 
 # Create map from internal study to public study
 dct=tableStudies.BuildColDict('Study',True)

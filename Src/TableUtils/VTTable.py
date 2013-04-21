@@ -574,7 +574,7 @@ class VTTable:
         data=self.Columns[self.GetColNr(ColName)]['data']
         for i in range(0,len(data)):
             str=data[i]
-            if (len(str)>=2) and (str[0]=='"') and (str[len(str)-1]=='"'):
+            if (str!=None) and (len(str)>=2) and (str[0]=='"') and (str[len(str)-1]=='"'):
                 str=str[1:len(str)-1]
                 data[i]=str
                 
