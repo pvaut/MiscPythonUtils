@@ -1,6 +1,8 @@
 import math
 import string
 
+import xlrd
+
 VERYSMALL= -1.0e199
 VERYLARGE= +1.0e199
 
@@ -142,6 +144,19 @@ class VTTable:
 #        gc.enable()
         f.close()
         print('Finished Loading table {0} ({1} rows)'.format(filename,linecount))
+        
+    def LoadXls(self,filename,sheetname):
+        book = xlrd.open_workbook(filename)
+        sheet=book.sheet_by_name(sheetname)
+        for col in sheet.row(0):
+            self.AddColumn(VTColumn(col.value,'Text'))
+        
+        for RowNr in range(1,sheet.nrows):
+            row=sheet.row(RowNr)
+            for ColNr in range(sheet.ncols):
+                self.Columns[ColNr]['data'].append(row[ColNr].value)
+        
+        
         
     def SaveFile(self, filename, saveheader=True, absentvaluestring=None):
         print('Saving table '+filename)

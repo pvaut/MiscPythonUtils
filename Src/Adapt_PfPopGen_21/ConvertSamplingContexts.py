@@ -9,7 +9,8 @@ basedir = 'C:/Data/Genomes/PlasmodiumFalciparum/Release_21/OriginalData_04'
 ########################################################################################################"
 tableStudies=VTTable.VTTable()
 tableStudies.allColumnsText=True
-tableStudies.LoadFile(basedir+"/PartnerStudies.txt")
+#tableStudies.LoadFile(basedir+"/PartnerStudies.txt")
+tableStudies.LoadXls(basedir+"/PartnerStudies.xlsx","PartnerStudies")
 
 UseNewDescription=True
 

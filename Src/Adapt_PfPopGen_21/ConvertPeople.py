@@ -3,19 +3,26 @@ import sys
 import hashlib
 
 
+
+
+
+
 basedir = 'C:/Data/Genomes/PlasmodiumFalciparum/Release_21/OriginalData_04'
+
 
 # Build index of all available studies
 tableStudies=VTTable.VTTable()
 tableStudies.allColumnsText=True
-tableStudies.LoadFile(basedir+"/PartnerStudies.txt")
+#tableStudies.LoadFile(basedir+"/PartnerStudies.txt")
+tableStudies.LoadXls(basedir+"/PartnerStudies.xlsx","PartnerStudies")
 studiesMap = tableStudies.BuildColDict('Study', False)
 
 
 
 tablePeople=VTTable.VTTable()
 tablePeople.allColumnsText=True
-tablePeople.LoadFile(basedir+"/PS_people.txt")
+#tablePeople.LoadFile(basedir+"/PS_people.txt")
+tablePeople.LoadXls(basedir+"/PS_people.xlsx","PS_people")
 
 tablePeople.ColumnRemoveQuotes("Affiliation1")
 tablePeople.ColumnRemoveQuotes("Affliliation2")
