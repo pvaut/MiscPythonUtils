@@ -5,7 +5,7 @@ import os
 import shutil
 
 def hash(str):
-    return hashlib.md5('salt'+str+'pepper'+str).hexdigest()
+    return hashlib.md5('salt'+str+'pepper'+str).hexdigest()[0:8]
 
 
 if len(sys.argv)<2:
@@ -32,7 +32,7 @@ for line in fli:
     token=line.split('=',1)[0]
     content=line.split('=',1)[1].rstrip()
     if token=='Samples':
-        content=str([hash(smp) for smp in publicSamples])
+        content='\t'.join([hash(smp) for smp in publicSamples])
     flo.write('{0}={1}\n'.format(token,content))
 fli.close()
 flo.close()
@@ -45,10 +45,10 @@ for fname in os.listdir(basedir):
     sampleid=st.split('.',1)[0]
     ext=st.split('.',1)[1]
     if sampleid in publicSamplesMap:
-        fileCount += 1
-        outputFileName = chromid+'_'+hash(sampleid)+'.'+ext
-        print(fname+' '+chromid+' '+sampleid+' '+ext+'  ->  '+outputFileName)
-        shutil.copyfile(basedir+'/'+fname,outputdir+'/'+outputFileName)
+	fileCount += 1
+	outputFileName = chromid+'_'+hash(sampleid)+'.'+ext
+	print(fname+' '+chromid+' '+sampleid+' '+ext+'  ->  '+outputFileName)
+	shutil.copyfile(basedir+'/'+fname,outputdir+'/'+outputFileName)
 
 
 print('Files: '+str(fileCount))

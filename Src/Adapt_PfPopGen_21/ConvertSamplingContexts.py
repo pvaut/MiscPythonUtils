@@ -16,7 +16,8 @@ UseNewDescription=True
 
 if UseNewDescription:
     tableStudies.DropCol('Previous_Title')
-    tableStudies.DropCol('Previous_Description')
+    tableStudies.DropCol('Description_Previous1')
+    tableStudies.DropCol('Description_Previous2')
 else:
     tableStudies.DropCol('Study_title')
     tableStudies.DropCol('Description')
@@ -44,7 +45,7 @@ while RowNr<tableStudies.GetRowCount():
     else:
         RowNr+=1
 
-tableStudies.MergeColsToString('title', '{0}. {1}','NumID','Study_title')
+tableStudies.MergeColsToString('title', '<b>{0}</b> - {1}','NumID','Study_title')
         
 tableStudies.RenameCol('Study','study')
 tableStudies.RenameCol('Description','description')
