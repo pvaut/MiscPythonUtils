@@ -1,9 +1,76 @@
 from TableUtils import VTTable
-import MySQLdb
+#import MySQLdb
 import sys
 import math
-import DataProviders
-import sets
+#import DataProviders
+#import sets
+
+
+if False:
+    tb=VTTable.VTTable()
+    tb.allColumnsText=True
+    tb.LoadFile('/home/pvaut/Documents/Genome/PfPopgen21/AlleleFreq-nraf.tab')
+
+    tb.DropCol('Num')
+    tb.ConvertColToValue('Pos')
+    freqs=['Overall','BD','BF','CO','GH','GM','GN','KE','KH','LA','ML','MM','MW','PE','PG','TH','TZ','VN']
+    for freq in freqs:
+        tb.ConvertColToValue(freq)
+
+    tb.RenameCol('Chr','chrom')
+    tb.RenameCol('Pos','pos')
+    tb.RenameCol('SnpName','snpid')
+    tb.PrintRows(0,9)
+    tb.SaveSQLCreation('/home/pvaut/Documents/Genome/PfPopgen21/AlleleFreq-nraf_creation.sql','country_nraf')
+    tb.SaveSQLDump('/home/pvaut/Documents/Genome/PfPopgen21/AlleleFreq-nraf.sql','country_nraf')
+
+if True:
+    tb=VTTable.VTTable()
+    tb.allColumnsText=True
+    tb.LoadFile('/home/pvaut/Documents/Genome/PfPopgen21/snpgroups.txt')
+    tb.PrintRows(0,999)
+    tb.SaveSQLCreation('/home/pvaut/Documents/Genome/PfPopgen21/snpgroups_creation.sql','snpgroups')
+    tb.SaveSQLDump('/home/pvaut/Documents/Genome/PfPopgen21/snpgroups.sql','snpgroups')
+
+    tb=VTTable.VTTable()
+    tb.allColumnsText=True
+    tb.LoadXls('/home/pvaut/Documents/Genome/PfPopgen21/allSNPs.xlsx','Sheet1')
+    tb.MergeColsToString("snpid","MAL{0}:{1}","chrom","pos")
+    tb.DropCol('sequence_code')
+    tb.DropCol('chr_valid')
+    tb.DropCol('coord_valid')
+    tb.DropCol('multiplex_code')
+    tb.DropCol('gene_symbol')
+    tb.DropCol('Group')
+    tb.DropCol('chrom')
+    tb.DropCol('pos')
+    tb.AddIndexCol('idx')
+    tb.PrintRows(0,999)
+    tb.SaveSQLDump('/home/pvaut/Documents/Genome/PfPopgen21/snpgroupmembers.sql','snpgroupmembers')
+
+
+if False:
+    tb=VTTable.VTTable()
+    tb.allColumnsText=True
+    tb.LoadFile('/home/pvaut/Documents/Genome/PfPopgen21/snpgroups.txt')
+    tb.PrintRows(0,999)
+    tb.SaveSQLCreation('/home/pvaut/Documents/Genome/PfPopgen21/snpgroups_creation.sql','snpgroups')
+    tb.SaveSQLDump('/home/pvaut/Documents/Genome/PfPopgen21/snpgroups.sql','snpgroups')
+    tb=VTTable.VTTable()
+    tb.allColumnsText=True
+    tb.LoadFile('/home/pvaut/Documents/Genome/PfPopgen21/snpgroupmembers.txt')
+    tb.AddIndexCol('idx')
+    tb.PrintRows(0,999)
+    tb.SaveSQLCreation('/home/pvaut/Documents/Genome/PfPopgen21/snpgroupmembers_creation.sql','snpgroupmembers')
+    tb.SaveSQLDump('/home/pvaut/Documents/Genome/PfPopgen21/snpgroupmembers.sql','snpgroupmembers')
+
+
+
+sys.exit()
+
+
+
+
 
 
 meta = {

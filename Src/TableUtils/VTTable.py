@@ -198,7 +198,7 @@ class VTTable:
         
         colIsString=[self.Columns[colnr]['info'].IsText() for colnr in range(self.GetColCount())]
         
-        blockSize=20
+        blockSize=2000
         blockStarted=False
         
         linecount=0
@@ -215,6 +215,7 @@ class VTTable:
                     f.write('None')
                 else:
                     if colIsString[colnr]:
+                        val=val.encode('ascii','ignore')
                         val=val.replace("\x92","'")
                         val=val.replace("\xC2","'")
                         val=val.replace("\x91","'")
@@ -240,7 +241,24 @@ class VTTable:
         f.write('UNLOCK TABLES;\n')
         f.close()
         print('Finished Saving SQL dump {0} ({1} rows)'.format(filename,linecount))
-        
+
+    def SaveSQLCreation(self, filename, tablename):
+        print('Saving SQL dump '+filename)
+        f=open(filename,'w')
+        f.write('drop table if exists {0};'.format(tablename))
+        f.write('CREATE TABLE {0} (\n'.format(tablename))
+        for col in self.GetColList():
+            colinfo=self.GetColInfo(col)
+            st = '   '+col
+            typestr='varchar(20)'
+            if colinfo.GetTypeStr()=='Value':
+                typestr='float'
+            st += ' '+typestr
+            st += ',\n'
+            f.write(st)
+        f.write(');\n')
+        f.close()
+
         
     def PrintInfo(self):
         print('TABLE INFO Rowcount={0} ColumnCount={1}'.format(self.GetRowCount(),self.GetColCount()))
