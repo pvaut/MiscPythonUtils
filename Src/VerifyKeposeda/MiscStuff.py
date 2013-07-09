@@ -5,6 +5,17 @@ import gc
 from TableUtils import VTTable
 from TableUtils import IntervalTools
 
+import numpy
+
+
+import matplotlib.pyplot as plt
+plt.plot([1,2,3,4])
+plt.ylabel('some numbers')
+plt.show()
+sys.exit()
+
+
+
 def triv():
     basepath="C:/Data/Articles/PositiveSelection"
     
