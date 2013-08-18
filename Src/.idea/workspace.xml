@@ -6,7 +6,7 @@
     <ignored path=".idea/workspace.xml" />
     <file path="/MiscStuff.py" changelist="cf841744-34d5-403f-b358-e0056fb61bb2" time="1373388087779" ignored="false" />
     <file path="/Convert.py" changelist="cf841744-34d5-403f-b358-e0056fb61bb2" time="1376730049387" ignored="false" />
-    <file path="/Calc.py" changelist="cf841744-34d5-403f-b358-e0056fb61bb2" time="1376819939849" ignored="false" />
+    <file path="/Calc.py" changelist="cf841744-34d5-403f-b358-e0056fb61bb2" time="1376825420712" ignored="false" />
     <file path="/ConvertSamples.py" changelist="cf841744-34d5-403f-b358-e0056fb61bb2" time="1376750920751" ignored="false" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -39,7 +39,7 @@
       <file leaf-file-name="Calc.py" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/CrossRecombination/Calc.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="117" column="4" selection-start="3537" selection-end="3537" vertical-scroll-proportion="3.6335404">
+            <state line="277" column="25" selection-start="8992" selection-end="8992" vertical-scroll-proportion="0.4099379">
               <folding>
                 <element signature="e#0#30#0" expanded="true" />
               </folding>
@@ -522,7 +522,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/CrossRecombination/Calc.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="117" column="4" selection-start="3537" selection-end="3537" vertical-scroll-proportion="3.6335404">
+        <state line="277" column="25" selection-start="8992" selection-end="8992" vertical-scroll-proportion="0.4099379">
           <folding>
             <element signature="e#0#30#0" expanded="true" />
           </folding>

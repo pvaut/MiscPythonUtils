@@ -10,6 +10,9 @@ import matplotlib.pyplot as plt
 
 import matplotlib.pyplot as plt
 
+#SampleCount = 124
+SampleCount = 37
+
 chromosomeInfo = [
             { 'id': 'Pf3D7_01_v3', 'len': int(0.640851E6) },
             { 'id': 'Pf3D7_02_v3', 'len': int(0.947102E6) },
@@ -106,26 +109,32 @@ def SimulateEvents(snpposits):
             for i1 in range(cntt):
                 snppositsonchromo.append(int(numpy.random.rand()*chromoInfo['len']))
 
-        #print(str(len(snppositsonchromo)))
-        #print(str(snppositsonchromo))
-        #sys.exit()
-
-        #print('avcount = {0} simcount = {1}'.format(avcount,simcount))
         chromoposits = []
-        simnr=0
-        while simnr < simcount:
-            if RandomPositions:
-                randomsnpnr = int(numpy.random.rand()*len(snppositsonchromo))
-                randomposit = snppositsonchromo[randomsnpnr]
-            else:
-                randomposit = int(numpy.random.rand()*chromoInfo['len'])
-                if (randomposit>=snppositsonchromo[1]) and (randomposit<=snppositsonchromo[len(snppositsonchromo)-2]):
-                    randomposit=FindClosest(snppositsonchromo,randomposit)
+        for SampleNr in range(SampleCount):
+            simcount = numpy.random.poisson(avcount*1.0/SampleCount)
+
+            simnr=0
+            eventposits=[]
+            while simnr < simcount:
+                if RandomPositions:
+                    randomsnpnr = int(numpy.random.rand()*len(snppositsonchromo))
+                    randomposit = snppositsonchromo[randomsnpnr]
                 else:
-                    randomposit = -1
-            if randomposit >= 0:
-                chromoposits.append(randomposit)
-                simnr += 1
+                    randomposit = int(numpy.random.rand()*chromoInfo['len'])
+                    if (randomposit>=snppositsonchromo[1]) and (randomposit<=snppositsonchromo[len(snppositsonchromo)-2]):
+                        randomposit=FindClosest(snppositsonchromo,randomposit)
+                    else:
+                        randomposit = -1
+                if randomposit >= 0:
+                    isok=True
+                    for otherevent in eventposits:
+                        if abs(otherevent-randomposit)<25000:
+                            isok=False
+                    if isok:
+                        eventposits.append(randomposit)
+                        chromoposits.append(randomposit)
+                        simnr += 1
+
         chromoposits = sorted(chromoposits)
         #print(str(chromoposits))
         for posit in chromoposits:
@@ -221,7 +230,7 @@ def SimulateStats(winSize):
     snpposits = LoadSnpPositions()
     maxcount = 200
     countsList =[[] for i in range(maxcount)]
-    for simnr in range(1000):#!!! should be at least 10000
+    for simnr in range(10000):#!!! should be at least 10000
         print('Simulation {0}'.format(simnr))
         simevents = SimulateEvents(snpposits)
         #print('Simulated total events: {0}'.format(len(simevents['posits'])))
@@ -246,11 +255,11 @@ def SimulateStats(winSize):
     return rs
 
 
-winSizeList = [10000]
+winSizeList = [2000,5000,10000,20000]
 
 
 # Generate or load the simulated data
-if True:
+if False:
     simuldata={}
     for winSize in winSizeList:
         simuldata[str(winSize)] = SimulateStats(winSize)
@@ -266,7 +275,7 @@ print(str(simuldata))
 
 plotnr = 0;
 fig = plt.figure(1)
-fig.set_size_inches(15,15)
+fig.set_size_inches(15,30)
 
 
 for winSize in winSizeList:
