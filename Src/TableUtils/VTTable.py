@@ -199,6 +199,7 @@ class VTTable:
         colIsString=[self.Columns[colnr]['info'].IsText() for colnr in range(self.GetColCount())]
         
         blockSize=2000
+        #blockSize = 1
         blockStarted=False
         
         linecount=0
@@ -212,10 +213,14 @@ class VTTable:
                 if colnr>0: lineStr+=','
                 val=self.Columns[colnr]['data'][rownr]
                 if (val is None):
-                    f.write('None')
+                    lineStr += 'NULL'
                 else:
                     if colIsString[colnr]:
-                        val=val.encode('ascii','ignore')
+                        try:
+                            val=val.encode('ascii','ignore')
+                        except UnicodeDecodeError:
+                            print('Unable to encode '+val)
+                            val='*failed encoding*'
                         val=val.replace("\x92","'")
                         val=val.replace("\xC2","'")
                         val=val.replace("\x91","'")
@@ -508,7 +513,11 @@ class VTTable:
         coldata=col['data']
         for i in range(0,len(coldata)):
             if (coldata[i]!='None') and (coldata[i]!='NA') and (coldata[i]!=''):
-                coldata[i]=float(coldata[i])
+                try:
+                    coldata[i]=float(coldata[i])
+                except ValueError:
+                    print('ERROR: invalid float value '+coldata[i])
+                    coldata[i]=None
             else:
                 coldata[i]=None
             

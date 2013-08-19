@@ -4,6 +4,16 @@ import sys
 #basepath='/Users/pvaut/Documents/Data/PfGeneticBarcodes'
 basepath='/home/pvaut/Documents/Genome/PfGeneticBarcodes'
 
+#def convertdashtoabsent(x):
+#    return 33
+#    if x=='-':
+#        return 0
+#    else:
+#        return 2
+
+
+
+
 tb = VTTable.VTTable()
 
 def ImportData():
