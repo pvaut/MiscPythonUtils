@@ -148,7 +148,11 @@ def SimulateEvents(snpposits):
 
 
 
-def CalcIt(events, winSize):
+def CalcIt(events, winSize, saveFile = None):
+
+    if saveFile is not None:
+        fp=open(saveFile,'w')
+        fp.write('chrom\tpos\tvalue\n')
 
     event_chromoids=events['chromoids']
     event_posits=events['posits']
@@ -182,6 +186,8 @@ def CalcIt(events, winSize):
             while len(sizeCounts)<=cnt:
                 sizeCounts.append(0)
             sizeCounts[cnt] += 1
+            if saveFile is not None:
+                fp.write('{0}\t{1}\t{2}\n'.format(chromoId,winStart+winSize/2,cnt))
             winStart+=winSize/2
     sizeCountsCumul =[]
     for size in range(len(sizeCounts)):
@@ -191,6 +197,10 @@ def CalcIt(events, winSize):
             ct += sizeCounts[size2]
             size2 += 1
         sizeCountsCumul.append(ct)
+
+    if saveFile is not None:
+        fp.close()
+
     return {
         'sizecounts' : sizeCounts,
         'sizecountscumul' : sizeCountsCumul
@@ -230,12 +240,12 @@ def SimulateStats(winSize):
     snpposits = LoadSnpPositions()
     maxcount = 200
     countsList =[[] for i in range(maxcount)]
-    for simnr in range(10000):#!!! should be at least 10000
+    for simnr in range(100000):#!!! should be at least 10000
         print('Simulation {0}'.format(simnr))
         simevents = SimulateEvents(snpposits)
         #print('Simulated total events: {0}'.format(len(simevents['posits'])))
         rs = CalcIt(simevents,winSize)
-        print(str(rs['sizecountscumul']))
+        #print(str(rs['sizecountscumul']))
         sizecountscumul = rs['sizecountscumul']
         for nr in range(maxcount):
             if nr<len(sizecountscumul):
@@ -255,7 +265,7 @@ def SimulateStats(winSize):
     return rs
 
 
-winSizeList = [2000,5000,10000,20000]
+winSizeList = [5000,10000]
 
 
 # Generate or load the simulated data
@@ -275,7 +285,7 @@ print(str(simuldata))
 
 plotnr = 0;
 fig = plt.figure(1)
-fig.set_size_inches(15,30)
+fig.set_size_inches(7,15)
 
 
 for winSize in winSizeList:
@@ -284,7 +294,7 @@ for winSize in winSizeList:
     plt.subplot(len(winSizeList),1,plotnr)
     plt.title('Window size {0}'.format(winSize))
 
-    rs = CalcIt(events,winSize)
+    rs = CalcIt(events,winSize,'hotspotwindow_{0}'.format(winSize))
     sizecountscumul = rs['sizecountscumul']
     print('SizecountsCumul: '+str(sizecountscumul))
 
@@ -297,7 +307,7 @@ for winSize in winSizeList:
 
     for idx in range(len(sizecountscumul)):
         plt.annotate(
-            '{0}, {1}, {2}'.format(sizecountscumul[idx],simpts_av[idx],simpts_q99[idx]),
+            '{0}, av={1:.1f}, q99={2} q999={3}'.format(sizecountscumul[idx],simpts_av[idx],simpts_q99[idx],simpts_q999[idx]),
             xy = (idx, sizecountscumul[idx]),
             xytext = (15, 15),
             textcoords = 'offset points',
@@ -317,10 +327,10 @@ for winSize in winSizeList:
     plt.semilogy(simpts_q999,'r:')
     plt.semilogy(simpts_q999,'wo')
 
-    plt.xlim(0,12)
+    plt.xlim(0,9)
 
 #plt.ylabel('some numbers')
-plt.savefig('plots/plot1.png')
+plt.savefig('plots/plot1.pdf')
 plt.show()
 
 sys.exit()
