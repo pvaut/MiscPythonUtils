@@ -72,6 +72,7 @@ class VTTable:
     
     def __init__(self):
         self.allColumnsText=False
+        self.sepchar='\t'
         self.Columns=[]
         self.ColIndex={}
 #        self.Columns.append('BROL')
@@ -109,7 +110,7 @@ class VTTable:
         print('Loading table '+filename)
         del self.Columns[:]
         f = open(filename)
-        headercells=f.readline().rstrip('\r\n').split('\t')
+        headercells=f.readline().rstrip('\r\n').split(self.sepchar)
         for headercol in headercells:
             headercolparts=headercol.split('#')
             coltypestr='Value'
@@ -124,8 +125,8 @@ class VTTable:
             line=line.rstrip('\r\n')
             if len(line)>0:
                 if TreatSpacesAsTabs:
-                    line=line.replace(' ','\t')
-                cells=line.split('\t')
+                    line=line.replace(' ',self.sepchar)
+                cells=line.split(self.sepchar)
                 for i in range(0,len(self.Columns)):
                     thecol=self.Columns[i]
                     if i<len(cells):
@@ -259,7 +260,9 @@ class VTTable:
             if colinfo.GetTypeStr()=='Value':
                 typestr='float'
             st += ' '+typestr
-            st += ',\n'
+            if col!=self.GetColName(self.GetColCount()-1):
+                st += ','
+            st += '\n'
             f.write(st)
         f.write(');\n')
         f.close()
@@ -512,11 +515,11 @@ class VTTable:
         col['info'].MakeValue()
         coldata=col['data']
         for i in range(0,len(coldata)):
-            if (coldata[i]!='None') and (coldata[i]!='NA') and (coldata[i]!=''):
+            if (coldata[i]!='None') and (coldata[i]!='NA') and (coldata[i]!='') and (coldata[i] is not None):
                 try:
                     coldata[i]=float(coldata[i])
-                except ValueError:
-                    print('ERROR: invalid float value '+coldata[i])
+                except TypeError:
+                    print('ERROR: invalid float value '+str(coldata[i]))
                     coldata[i]=None
             else:
                 coldata[i]=None
