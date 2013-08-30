@@ -1,4 +1,7 @@
 .idea
+*.sql
+*.sql~
+*.pdf
 
 #################
 ## Eclipse

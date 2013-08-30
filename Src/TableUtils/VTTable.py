@@ -281,7 +281,7 @@ class VTTable:
             for rownr in range(start,theend):
                 colsize=max(colsize,len('{0}'.format(col['data'][rownr])))
             col['tmpsize']=colsize
-           
+
         
         print('_'.join([col['tmpsize']*'_' for col in self.Columns]))
         print('|'.join([('{0:'+'{0:0}'.format(col['tmpsize'])+'}').format(col['info'].Name) for col in self.Columns]))
