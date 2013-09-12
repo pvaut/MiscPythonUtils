@@ -2,6 +2,22 @@ from TableUtils import VTTable
 import sys
 import matplotlib.pyplot as plt
 
+import MySQLdb
+
+
+DBSRV = 'localhost'
+DBUSER = 'root'
+DBPASS = '1234'
+BASEDIR = '/home/pvaut/Documents/Genome'
+#BASEDIR = '/mnt/storage/webapps'
+
+DB='datasetindex'
+
+db = MySQLdb.connect(host=DBSRV, user=DBUSER, passwd=DBPASS, db=DB, charset='utf8')
+
+
+
+
 plt.plot([1,2,3,4])
 plt.ylabel('some numbers')
 plt.show()
