@@ -515,7 +515,7 @@ class VTTable:
         col['info'].MakeValue()
         coldata=col['data']
         for i in range(0,len(coldata)):
-            if (coldata[i]!='None') and (coldata[i]!='NA') and (coldata[i]!='') and (coldata[i] is not None):
+            if (coldata[i]!='None') and (coldata[i]!='NA') and (coldata[i]!='') and (coldata[i] is not None) and (coldata[i]!='inf'):
                 try:
                     coldata[i]=float(coldata[i])
                 except TypeError:
