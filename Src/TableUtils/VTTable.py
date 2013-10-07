@@ -73,6 +73,7 @@ class VTTable:
     def __init__(self):
         self.allColumnsText=False
         self.sepchar='\t'
+        self.saveheadertype=True
         self.Columns=[]
         self.ColIndex={}
 #        self.Columns.append('BROL')
@@ -167,7 +168,8 @@ class VTTable:
                 col=self.Columns[colnr]
                 if colnr>0: f.write('\t')
                 f.write(col['info'].Name)
-                if col['info'].IsText(): f.write("#T")
+                if self.saveheadertype:
+                    if col['info'].IsText(): f.write("#T")
             f.write('\n')
         linecount=0
         for rownr in range(0,self.GetRowCount()):
