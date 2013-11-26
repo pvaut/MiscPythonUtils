@@ -5,6 +5,16 @@ import gc
 from TableUtils import VTTable
 from TableUtils import IntervalTools
 
+tb=VTTable.VTTable()
+tb.allColumnsText = True
+tb.LoadFile('/home/pvaut/Documents/Genome/Ag/samples')
+tb.PrintRows(0,10)
+tb.SaveSQLCreation('/home/pvaut/Documents/Genome/Ag/samples_create.sql','SMP')
+tb.SaveSQLDump('/home/pvaut/Documents/Genome/Ag/samples_dump.sql','SMP')
+
+sys.exit()
+
+
 import numpy
 
 

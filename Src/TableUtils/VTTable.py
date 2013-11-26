@@ -317,7 +317,18 @@ class VTTable:
 
     def GetColCount(self):
         return(len(self.Columns));
-    
+
+    def RequireColumnSet(self, collist):
+        isok = True
+        if len(collist) != len(self.Columns):
+            isok = False
+        else:
+            for i in range(len(collist)):
+                if collist[i] != self.Columns[i]['info'].Name:
+                    isok = False
+        if not isok:
+            raise Exception('Invalid column list; expected '+str(collist))
+
     def GetColName(self,colnr):
         return self.Columns[colnr]['info'].Name
     
