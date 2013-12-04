@@ -94,15 +94,16 @@ class VTTable:
         for i in range(0,rowcount):
             self.Columns[self.GetColNr(ColName)]['data'].append(Val)
             
-    def ArrangeColumns(self,SortedList):
-        ColList=self.GetColList()
+    def ArrangeColumns(self,iSortedList):
+        SortedList = [it for it in iSortedList]
+        ColList = self.GetColList()
         for col in SortedList:
             if col not in ColList:
                 raise Exception('Invalid column name '+col)
         for col in ColList:
             if col not in SortedList:
                 SortedList.append(col)
-        self.Columns=[self.Columns[self.GetColNr(col)] for col in SortedList]
+        self.Columns = [self.Columns[self.GetColNr(col)] for col in SortedList]
         self.BuildColIndex()
 
 
@@ -446,7 +447,18 @@ class VTTable:
                     raise Exception('Duplicate key "{0}" in table (rows {1} & {2})'.format(keyvl,i,keydict[keyvl]))
             keydict[keyvl]=i
         return(keydict)
-    
+
+    def GetDuplicateValues(self, ColName):
+        keydict={}
+        keycolnr=self.GetColNr(ColName)
+        dupvals = []
+        for i in range(0,self.GetRowCount()):
+            keyvl=self.GetValue(i, keycolnr)
+            if keyvl in keydict:
+                dupvals.append(keyvl)
+            keydict[keyvl] = i
+        return dupvals
+
     def ToListOfMaps(self):
         lst=[]
         for i in range(0,self.GetRowCount()):

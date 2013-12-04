@@ -7,15 +7,11 @@ import sys
 
 tb = VTTable.VTTable()
 tb.allColumnsText = True
-tb.LoadFile('/home/pvaut/Documents/Genome/PfPopgen30/V02/SnpInfo.tab')
+tb.LoadFile('/Users/pvaut/Documents/Genome/PGV301/AlleleFreq-nraf.tab')
 tb.PrintRows(0,10)
-tb.ConvertColToValue('Pos')
-tb.RenameCol('Chr','chrom')
-tb.RenameCol('Pos','pos')
-tb.RenameCol('SnpName','snpid')
-tb.SaveSQLDump('/home/pvaut/Documents/Genome/PfPopgen30/V02/SnpInfo.sql','SNP')
-tb.SaveSQLCreation('/home/pvaut/Documents/Genome/PfPopgen30/V02/SnpInfo_create.sql','SNP')
 
+dupls = tb.GetDuplicateValues('SnpName')
+print('Duplicates: '+str(dupls))
 
 
 sys.exit()
