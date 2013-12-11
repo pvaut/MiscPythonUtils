@@ -197,7 +197,7 @@ class VTTable:
         
         f.write('SET SQL_SAFE_UPDATES=0;\n')
         f.write('LOCK TABLES {0} WRITE;\n'.format(DecoId(tablename)))
-        f.write('DELETE FROM {0};\n'.format(DecoId(tablename)))
+        #f.write('DELETE FROM {0};\n'.format(DecoId(tablename)))
 
         
         colIsString=[self.Columns[colnr]['info'].IsText() for colnr in range(self.GetColCount())]
@@ -260,6 +260,12 @@ class VTTable:
             colinfo=self.GetColInfo(col)
             st = '   '+col
             typestr='varchar(20)'
+            if colinfo.GetTypeStr()=='Text':
+                maxlen = 1
+                colnr = self.GetColNr(col)
+                for rownr in self.GetRowNrRange():
+                    maxlen = max(maxlen, len(self.GetValue(rownr, colnr)))
+                typestr='varchar({0})'.format(maxlen)
             if colinfo.GetTypeStr()=='Value':
                 typestr='float'
             st += ' '+typestr

@@ -3,8 +3,8 @@ import sys
 import os
 import math
 
-mysqlcommand = '/usr/local/mysql/bin/mysql'
-#mysqlcommand = 'mysql'
+#mysqlcommand = '/usr/local/mysql/bin/mysql'
+mysqlcommand = 'mysql'
 
 
 mysqldumpcommand = mysqlcommand+'dump'
@@ -12,7 +12,8 @@ mysqldumpcommand = mysqlcommand+'dump'
 crosses = [ '3d7_hb3', '7g8_gb4', 'hb3_dd2' ]
 methods = [ 'cortex', 'gatk' ]
 
-temppath = '/Users/pvaut/Documents/Data/Crosses'
+#temppath = '/Users/pvaut/Documents/Data/Crosses'
+temppath = '/home/pvaut/Documents/Genome/Crosses'
 
 winsize=1000
 
@@ -55,12 +56,12 @@ for cross in crosses:
 
             ptcount = chromoLen/winsize+1
 
-            filter = "(cross_name='{0}')".format(cross)
-            filter += " AND (method='{0}')".format(method)
+            filter = "(ExpName='{0}')".format(cross)
+            filter += " AND (Method='{0}')".format(method)
             filter += " AND (chrom='{0}')".format(chromoId)
 
             # Data set 1 : unfiltered
-            cmd = '{0} --user=root --password=1234 --column-names=TRUE pfx -e "SELECT chrom,pos from variants_filtered where {2}" > {1}'.format(
+            cmd = '{0} --user=root --password=1234 --column-names=TRUE pfx -e "SELECT chrom,pos from variants3 where {2}" > {1}'.format(
                 mysqlcommand,
                 outfile,
                 filter)
@@ -80,8 +81,8 @@ for cross in crosses:
                 cts1[bin] += 1
 
             # Data set 2 : unfiltered
-            filter += " AND (filter='')"
-            cmd = '{0} --user=root --password=1234 --column-names=TRUE pfx -e "SELECT chrom,pos from variants_filtered where {2}" > {1}'.format(
+            filter += " AND (FILTER='PASS')"
+            cmd = '{0} --user=root --password=1234 --column-names=TRUE pfx -e "SELECT chrom,pos from variants3 where {2}" > {1}'.format(
                 mysqlcommand,
                 outfile,
                 filter)
