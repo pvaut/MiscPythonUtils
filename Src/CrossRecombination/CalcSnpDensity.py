@@ -15,7 +15,7 @@ methods = [ 'cortex', 'gatk' ]
 #temppath = '/Users/pvaut/Documents/Data/Crosses'
 temppath = '/home/pvaut/Documents/Genome/Crosses'
 
-winsize=1000
+winsize=500
 
 chromosomeInfo = [
             { 'id': 'Pf3D7_01_v3', 'len': int(0.640851E6) },
@@ -107,8 +107,8 @@ for cross in crosses:
                 rownr = tbrs.GetRowCount()-1
                 tbrs.SetValue(rownr, 0, chromoId)
                 tbrs.SetValue(rownr, 1, (i+0.5)*winsize)
-                tbrs.SetValue(rownr, 2, cts1[i])
-                tbrs.SetValue(rownr, 3, cts2[i])
+                tbrs.SetValue(rownr, 2, cts1[i]*1.0/winsize)
+                tbrs.SetValue(rownr, 3, cts2[i]*1.0/winsize)
 
 
         tbrs.PrintRows(0,20)
