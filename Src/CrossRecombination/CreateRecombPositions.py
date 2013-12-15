@@ -3,6 +3,22 @@ import sys
 #import numpy
 
 
+
+tb = VTTable.VTTable()
+tb.allColumnsText = True
+tb.LoadFile('/Users/pvaut/Documents/Data/Crosses/samples.txt')
+
+tb.MapCol('coverage', lambda x: x.replace('X',''))
+tb.RenameCol('cross', 'crossid')
+tb.ConvertColToValue('coverage')
+tb.PrintRows(0, 10)
+tb.SaveSQLCreation('/Users/pvaut/Documents/Data/Crosses/samples_create.sql','samples')
+tb.SaveSQLDump('/Users/pvaut/Documents/Data/Crosses/samples_dump.sql','samples')
+
+
+sys.exit()
+
+
 # #TMP
 #
 # tb = VTTable.VTTable()
