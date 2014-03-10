@@ -1,7 +1,7 @@
 import math
 import string
 
-import xlrd
+#import xlrd
 
 VERYSMALL= -1.0e199
 VERYLARGE= +1.0e199
