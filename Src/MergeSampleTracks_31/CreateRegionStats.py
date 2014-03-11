@@ -7,6 +7,11 @@ import sys
 #filename = config.basedir + '/pysamstats/ARC3/PH0128-CW.coverage.txt.gz'
 filename = config.basedir + '/pysamstats/' + sys.argv[1]
 
+#maxlinecount = 500000
+maxlinecount = -1
+
+
+
 
 regionsfile = 'regions1'
 
@@ -83,8 +88,8 @@ with gzip.open(filename) as fl:
         linecount += 1
         if linecount%50000 == 0:
             print(linecount)
-#        if linecount >= 500000:
-#             break
+        if (maxlinecount > 0) and (linecount >= maxlinecount):
+             break
 
 
 output = []
@@ -105,5 +110,5 @@ if not(os.path.exists('results')):
 
 
 with open(os.path.join('results', sampleid), 'w') as fp:
-    fp.write(output)
+    fp.write(output+'\n')
 
