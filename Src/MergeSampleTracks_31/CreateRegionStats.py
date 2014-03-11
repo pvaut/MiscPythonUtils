@@ -4,16 +4,18 @@ import Utils.DQXMathUtils as DQXMathUtils
 import os
 import sys
 
-#filename = config.basedir + '/pysamstats/ARC3/PH0128-CW.coverage.txt.gz'
-filename = config.basedir + '/pysamstats/' + sys.argv[1]
+if len(sys.argv) > 1:
+    filename = config.basedir + '/pysamstats/' + sys.argv[1]
+else:
+    filename = config.basedir + '/pysamstats/ARC3/PH0128-CW.coverage.txt.gz'
 
-#maxlinecount = 500000
-maxlinecount = -1
+maxlinecount = 100000
+#maxlinecount = -1
 
 
 
 
-regionsfile = 'regions1'
+regionsfile = 'regions2'
 
 regions = []
 
@@ -25,14 +27,22 @@ class Region:
             self.all = True
         else:
             self.all = False
-            cols = cols[1].split(';')
             self.reg_chroms = []
             self.reg_starts = []
             self.reg_stops = []
-            for col in cols:
-                self.reg_chroms.append(col.split(':')[0])
-                self.reg_starts.append(int(col.split(':')[1].split('-')[0]))
-                self.reg_stops.append(int(col.split(':')[1].split('-')[1]))
+            if cols[1][0:5] == 'file:':
+                print('reading regions from file')
+                with open(config.basedir + '/' + cols[1][5:]) as fp:
+                    for lne in fp:
+                        self.reg_chroms.append(lne.split(' ')[0])
+                        self.reg_starts.append(int(lne.split(' ')[1]))
+                        self.reg_stops.append(int(lne.split(' ')[2]))
+            else:
+                cols = cols[1].split(';')
+                for col in cols:
+                    self.reg_chroms.append(col.split(':')[0])
+                    self.reg_starts.append(int(col.split(':')[1].split('-')[0]))
+                    self.reg_stops.append(int(col.split(':')[1].split('-')[1]))
             self.regcount=len(self.reg_chroms)
         self.stat = DQXMathUtils.BasicStatAcummulator(not(self.all))
 
