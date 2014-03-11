@@ -4,6 +4,10 @@ Src/.idea
 *.sql~
 *.pdf
 
+results
+jobs
+
+
 #################
 ## Eclipse
 #################
