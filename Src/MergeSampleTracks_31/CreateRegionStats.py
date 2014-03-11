@@ -2,6 +2,11 @@ import gzip
 import Utils.config as config
 import Utils.DQXMathUtils as DQXMathUtils
 import os
+import sys
+
+#filename = config.basedir + '/pysamstats/ARC3/PH0128-CW.coverage.txt.gz'
+filename = config.basedir + '/pysamstats/' + sys.argv[1]
+
 
 regionsfile = 'regions1'
 
@@ -56,10 +61,10 @@ with open(regionsfile) as fl:
         regions.append(Region(line.rstrip('\r\n')))
 
 
-filename = config.basedir + '/pysamstats/ARC3/PH0128-CW.coverage.txt.gz'
 
 #Get sample id from filename
 sampleid = os.path.split(filename)[1].split('.')[0]
+print('SAMPLEID: '+sampleid)
 
 colindex = 2
 
