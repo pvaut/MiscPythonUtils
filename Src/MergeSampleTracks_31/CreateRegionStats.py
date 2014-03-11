@@ -15,7 +15,6 @@ regions = []
 class Region:
     def __init__(self, line):
         cols = line.split('\t')
-        self.stat = DQXMathUtils.BasicStatAcummulator(True)
         self.name = cols[0]
         if cols[1] == 'all':
             self.all = True
@@ -30,6 +29,7 @@ class Region:
                 self.reg_starts.append(int(col.split(':')[1].split('-')[0]))
                 self.reg_stops.append(int(col.split(':')[1].split('-')[1]))
             self.regcount=len(self.reg_chroms)
+        self.stat = DQXMathUtils.BasicStatAcummulator(not(self.all))
 
     def ToString(self):
         st = self.name+' '
@@ -83,8 +83,8 @@ with gzip.open(filename) as fl:
         linecount += 1
         if linecount%50000 == 0:
             print(linecount)
-        if linecount >= 50000:
-             break
+#        if linecount >= 500000:
+#             break
 
 
 output = []
@@ -98,6 +98,7 @@ for region in regions:
     output.append(region.stat.getMax())
     print(region.ToString())
 output = sampleid + '\t' + '\t'.join([str(val) for val in output])
+print('OUTPUT:' + output)
 
 if not(os.path.exists('results')):
     os.makedirs('results')

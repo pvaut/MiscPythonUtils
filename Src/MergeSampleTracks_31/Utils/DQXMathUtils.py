@@ -108,7 +108,7 @@ class BasicStatAcummulator:
         return self.maxVal
 
     def getQuantile(self, fraction):
-        if len(self.values) == 0:
+        if (not(self.needquantiles)) or (len(self.values) == 0):
             return None
         return quantile(self.values, fraction)
 
@@ -116,11 +116,11 @@ class BasicStatAcummulator:
         return self.getQuantile(0.5)
 
     def getQuantileRange(self, fraction):
-        if len(self.values) == 0:
+        if (not(self.needquantiles)) or (len(self.values) == 0):
             return None
         return quantile(self.values, 1-fraction) - quantile(self.values, fraction)
 
     def getRange(self):
-        if len(self.values) == 0:
+        if (not(self.needquantiles)) or (len(self.values) == 0):
             return None
         return self.maxVal - self.minVal
