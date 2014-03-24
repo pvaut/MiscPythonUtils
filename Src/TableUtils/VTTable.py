@@ -157,7 +157,14 @@ class VTTable:
         for RowNr in range(1,sheet.nrows):
             row=sheet.row(RowNr)
             for ColNr in range(sheet.ncols):
-                self.Columns[ColNr]['data'].append(row[ColNr].value)
+                val = row[ColNr].value
+                if isinstance(val, basestring):
+                    try:
+                        val = val.encode('ascii','ignore')
+                    except UnicodeDecodeError:
+                        print('Unable to encode '+val)
+                        val = '*failed encoding*'
+                self.Columns[ColNr]['data'].append(val)
         
         
         
@@ -288,7 +295,10 @@ class VTTable:
         for col in self.Columns:
             colsize=len(col['info'].Name)
             for rownr in range(start,theend):
-                colsize=max(colsize,len('{0}'.format(col['data'][rownr])))
+                try:
+                    colsize=max(colsize,len('{0}'.format(col['data'][rownr])))
+                except Exception as e:
+                    print('*** ERROR: unable to encode text at row {0}, col {1}: {2}'.format(rownr, col['info'].Name, str(e)))
             col['tmpsize']=colsize
 
         
@@ -661,13 +671,14 @@ class VTTable:
             del self.Columns[colnr]['data'][RowNr]
         
     def RemoveEmptyRows(self):
-        RowNr=0;
-        while RowNr<self.GetRowCount():
-            IsEmpty=True
+        RowNr = 0
+        while RowNr < self.GetRowCount():
+            IsEmpty = True
             for ColNr in range(self.GetColCount()):
-                if len(str(self.GetValue(RowNr,ColNr)))>0:
-                    IsEmpty=False
+                if len(str(self.GetValue(RowNr,ColNr))) > 0:
+                    IsEmpty = False
             if IsEmpty:
                 self.RemoveRow(RowNr)
             else:
-                RowNr+=1
+                RowNr += 1
+
