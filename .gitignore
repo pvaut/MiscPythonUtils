@@ -4,6 +4,11 @@ Src/.idea
 *.sql~
 *.pdf
 
+results
+jobs
+pysamstats
+
+
 #################
 ## Eclipse
 #################
