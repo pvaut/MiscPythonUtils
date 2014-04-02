@@ -24,7 +24,7 @@ def PrintCorrespondence(tb, colname1, colname2):
                     othervals[vl2] = 0;
                 othervals[vl2] += 1
         cnt = len([k for k in othervals])
-        print(str(cnt) + ' | ' + str(state) + ' | ' + str(othervals))
+        print(str(cnt) + '\t' + str(state) + '\t' + '\t'.join(['{0}:{1}'.format(st,othervals[st]) for st in othervals]))
     print('====================================================\n')
 
 
@@ -92,26 +92,69 @@ if True:
 
 
 
+# if True:
+#     DtSolaris = VTTable.VTTable()
+#     DtSolaris.LoadXls("/Users/pvaut/Documents/Genome/PfPopgen31/solaris sample locations BM.xlsx", "PF_locations_extended.csv")
+#     #DtSolaris.PrintRows(0,10)
+#     #statelist = DtSolaris.GetColStateCountList('region')
+#     # for id in statelist:
+#     #     print(str(statelist[id]) + '\t' + id)
+#     DtSolaris.DropCol('Sample ID')
+#     # Rename columns
+#     DtSolaris.RenameCol('Oxford Code', 'Sample')
+#     DtSolaris.RenameCol('Project Code', 'Sol_study')
+#     DtSolaris.RenameCol('biosample_location', 'Sol_location')
+#     DtSolaris.RenameCol('region', 'Sol_region')
+#     DtSolaris.RenameCol('latitude', 'Sol_latitude')
+#     DtSolaris.RenameCol('longitude', 'Sol_longitude')
+#     DtSolaris.RemoveEmptyRows()
+
+
 if True:
-    DtSolaris = VTTable.VTTable()
-    DtSolaris.LoadXls("/Users/pvaut/Documents/Genome/PfPopgen31/solaris sample locations BM.xlsx", "PF_locations_extended.csv")
-    #DtSolaris.PrintRows(0,10)
+    DtMagnus = VTTable.VTTable()
+    DtMagnus.LoadXls("/Users/pvaut/Documents/Genome/PfPopgen31/MagnusSites.xlsx", "Sheet1")
+    DtMagnus.PrintRows(0,10)
     #statelist = DtSolaris.GetColStateCountList('region')
     # for id in statelist:
     #     print(str(statelist[id]) + '\t' + id)
-    DtSolaris.DropCol('Sample ID')
+    #DtSolaris.DropCol('Sample ID')
     # Rename columns
-    DtSolaris.RenameCol('Oxford Code', 'Sample')
-    DtSolaris.RenameCol('Project Code', 'Sol_study')
-    DtSolaris.RenameCol('biosample_location', 'Sol_location')
-    DtSolaris.RenameCol('region', 'Sol_region')
-    DtSolaris.RenameCol('latitude', 'Sol_latitude')
-    DtSolaris.RenameCol('longitude', 'Sol_longitude')
-    DtSolaris.RemoveEmptyRows()
+    DtMagnus.RenameCol('#ox_code', 'Sample')
+    DtMagnus.RenameCol('project_code', 'Mg_study')
+    DtMagnus.RenameCol('site_id', 'Mg_site')
+    # DtSolaris.RenameCol('latitude', 'Sol_latitude')
+    # DtSolaris.RenameCol('longitude', 'Sol_longitude')
+    DtMagnus.RemoveEmptyRows()
 
 #sys.exit()
 
 #PrintColumnStates(DtWebApp21, 'WebApp_SiteCode')
+
+
+
+
+tmp = VTTable.VTTable()
+tmp.MergeTablesByKeyFrom(Dt31, DtWebApp21, 'Sample', False, False)
+#tmp.PrintRows(0, 1000000)
+#PrintColumnStates(tmp, 'WebApp_SiteCode')
+
+data = VTTable.VTTable()
+data.MergeTablesByKeyFrom(tmp, DtMagnus, 'Sample', False, False)
+#data.PrintRows(0, 10)
+
+#PrintColumnStates(data, 'WebApp_SiteCode')
+
+if True:
+    print('************************* Info for samples present in webapp *******************************')
+    tmp = data.FilterByFunctionReturn(lambda vl: (vl is not None) and (len(str(vl))>0), 'WebApp_SiteCode')
+    PrintCorrespondence(tmp,'Mg_site', 'WebApp_SiteCode')
+    PrintCorrespondence(tmp,'WebApp_SiteCode', 'Mg_site')
+
+sys.exit()
+
+
+
+#################################################################################################
 
 tmp = VTTable.VTTable()
 tmp.MergeTablesByKeyFrom(Dt31, DtWebApp21, 'Sample', False, False)
@@ -132,9 +175,9 @@ if True:
 
 
     #tmp2 = data.FilterByFunctionReturn(lambda a, b: (a=='KH_Pursat') and (b=='Ratanakiri'), 'WebApp_SiteCode', 'Sol_region')
-    tmp2 = tmp.FilterByFunctionReturn(lambda a: (a=='PFV2'), 'Sol_study')
-    tmp2.PrintRows(0,9999)
-    tmp2.SaveFile('/Users/pvaut/Documents/Genome/PfPopgen31/tmp.txt')
+    # tmp2 = tmp.FilterByFunctionReturn(lambda a: (a=='PFV2'), 'Sol_study')
+    # tmp2.PrintRows(0,9999)
+    # tmp2.SaveFile('/Users/pvaut/Documents/Genome/PfPopgen31/tmp.txt')
 
 
 
@@ -143,7 +186,7 @@ set21 = data.FilterByFunctionReturn(lambda vl: (vl is not None) and (len(str(vl)
 set31diff = data.FilterByFunctionReturn(lambda vl: (vl is None) or (len(str(vl))==0), 'WebApp_SiteCode')
 
 
-if False:
+if True:
     print('DETERMINING REGION STATES THAT ARE NEW TO 3.1')
     set21_sol_region_states = set21.GetColStateCountList('Sol_region')
     print(str(set21_sol_region_states))
@@ -216,7 +259,7 @@ if False:
     tmp01 = data.FilterByFunctionReturn(lambda study_web, study_sol: (study_web is not None) and (len(study_web)>0) and (study_web!=study_sol), 'WebApp_Study', 'Sol_study')
     tmp01.PrintRows(0,99999)
 
-if True:
+if False:
     print('DISCREPANCIES IN Country BETWEEN 3.1 Olivo & SOLARIS')
     tmp01 = data.FilterByFunctionReturn(lambda study_31, study_sol: (study_31!=study_sol), 'Dt31_Study', 'Sol_study')
     tmp01.PrintRows(0,99999)
