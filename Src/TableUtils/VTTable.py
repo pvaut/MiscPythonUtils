@@ -194,14 +194,17 @@ class VTTable:
         f.close()
         print('Finished Saving table {0} ({1} rows)'.format(filename,linecount))
         
-    def SaveSQLDump(self, filename, tablename):
+    def SaveSQLDump(self, filename, tablename, includecreation = False):
         
         def DecoId(id):
             return '`'+id+'`'
         
         print('Saving SQL dump '+filename)
         f=open(filename,'w')
-        
+
+        if includecreation:
+            self.SaveSQLCreationImpl(f, tablename)
+
         f.write('SET SQL_SAFE_UPDATES=0;\n')
         f.write('LOCK TABLES {0} WRITE;\n'.format(DecoId(tablename)))
         #f.write('DELETE FROM {0};\n'.format(DecoId(tablename)))
@@ -261,6 +264,10 @@ class VTTable:
     def SaveSQLCreation(self, filename, tablename):
         print('Saving SQL dump '+filename)
         f=open(filename,'w')
+        self.SaveSQLCreationImpl(f, tablename)
+        f.close()
+
+    def SaveSQLCreationImpl(self, f, tablename):
         f.write('drop table if exists {0};'.format(tablename))
         f.write('CREATE TABLE {0} (\n'.format(tablename))
         for col in self.GetColList():
@@ -281,9 +288,7 @@ class VTTable:
             st += '\n'
             f.write(st)
         f.write(');\n')
-        f.close()
 
-        
     def PrintInfo(self):
         print('TABLE INFO Rowcount={0} ColumnCount={1}'.format(self.GetRowCount(),self.GetColCount()))
         for col in self.Columns:
