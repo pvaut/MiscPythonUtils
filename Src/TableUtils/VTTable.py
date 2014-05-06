@@ -107,6 +107,19 @@ class VTTable:
         self.BuildColIndex()
 
 
+    def ConvertToAscii(self, ColName):
+        colnr = self.GetColNr(ColName)
+        for rownr in self.GetRowNrRange():
+            val = self.GetValue(rownr, colnr)
+            if val is not None:
+                try:
+                    val=val.encode('ascii','ignore')
+                except UnicodeDecodeError:
+                    print('Unable to encode '+val)
+                    val='*failed encoding*'
+                self.SetValue(rownr, colnr, val)
+
+
         
     def LoadFile(self, filename, maxrowcount=-1, TreatSpacesAsTabs=False):
         print('Loading table '+filename)
