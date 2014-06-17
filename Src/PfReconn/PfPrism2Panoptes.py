@@ -8,7 +8,8 @@ import MySQLdb
 DBSRV = 'localhost'
 DBUSER = 'root'
 DBPASS = '1234'
-BASEDIR = '/home/pvaut/Documents/Genome'
+BASEDIR = '/users/pvaut/Documents/Genome'
+SOURCEDIR = BASEDIR + '/SourceData/sampledata/datasets/PfReconn'
 DB='mm6_pfprism'
 
 def LoadSQLTable(tb, tableName, maxRowCount=None):
@@ -29,16 +30,28 @@ def LoadSQLTable(tb, tableName, maxRowCount=None):
             tb.SetValue(rownr, colnr, row[colnr])
 
 
+tbEntities = VTTable.VTTable()
+tbEntities.AddColumn(VTTable.VTColumn('id', 'Text'))
+tbEntities.AddColumn(VTTable.VTColumn('name', 'Text'))
+LoadSQLTable(tbEntities, 'entity')
+tbEntities.PrintRows(0,10)
+mapEntities = tbEntities.BuildColDict('id', False)
+def EntityId2Name(id):
+    return tbEntities.GetValue(mapEntities[id], 1)
+
+
 tbSamples = VTTable.VTTable()
 tbSamples.AddColumn(VTTable.VTColumn('id', 'Text'))
 tbSamples.AddColumn(VTTable.VTColumn('source_label', 'Text'))
 tbSamples.AddColumn(VTTable.VTColumn('seq_label', 'Text'))
+tbSamples.AddColumn(VTTable.VTColumn('owner', 'Text'))
 tbSamples.AddColumn(VTTable.VTColumn('collection_date', 'Text'))
 tbSamples.AddColumn(VTTable.VTColumn('longitude', 'Value'))
 tbSamples.AddColumn(VTTable.VTColumn('latitude', 'Value'))
 tbSamples.AddColumn(VTTable.VTColumn('location_accuracy', 'Value'))
 tbSamples.AddColumn(VTTable.VTColumn('inferred_coordinates', 'Text'))
 LoadSQLTable(tbSamples, 'sample')
+tbSamples.MapCol('owner', EntityId2Name)
 tbSamples.PrintRows(0,10)
 mapSamples = tbSamples.BuildColDict('id', False)
 
@@ -70,7 +83,7 @@ LoadSQLTable(tbSampleMeta, 'vw_metadata')
 tbSampleMeta.ConvertToAscii('value')
 tbSampleMeta.PrintRows(0, 10)
 
-sMetaKeys = ['Set', 'method', 'country', 'region', 'Barcode scan location', 'supplier', 'sequenom', 'reported', 'internal']
+sMetaKeys = ['Set', 'method', 'country', 'region', 'PI', 'contact', 'Barcode scan location', 'supplier', 'sequenom', 'reported', 'internal']
 mapMetaKeys = {}
 
 for metaKey in sMetaKeys:
@@ -108,7 +121,7 @@ tbSamples.MapCol('location_accuracy', None2Empty)
 tbSamples.PrintRows(0, 10)
 
 tbSamples.saveheadertype = False
-tbSamples.SaveFile(BASEDIR+'/SourceData/datasets/PfReconn/datatables/samples/data')
+tbSamples.SaveFile(SOURCEDIR+'/datatables/samples/data')
 
 
 
@@ -130,7 +143,7 @@ LoadSQLTable(tbAssays, 'assay')
 tbAssays.PrintRows(0, 10)
 mapAssays = tbAssays.BuildColDict('id', False)
 tbAssays.saveheadertype = False
-tbAssays.SaveFile(BASEDIR+'/SourceData/datasets/PfReconn/datatables/assays/data')
+tbAssays.SaveFile(SOURCEDIR+'/datatables/assays/data')
 
 
 
@@ -222,4 +235,4 @@ for rownr in tbCallsIllumina.GetRowNrRange():
 
 tbCallsProcessed.PrintRows(0,10)
 tbCallsProcessed.saveheadertype = False
-tbCallsProcessed.SaveFile(BASEDIR+'/SourceData/datasets/PfReconn/datatables/calls/data')
+tbCallsProcessed.SaveFile(SOURCEDIR+'/datatables/calls/data')
