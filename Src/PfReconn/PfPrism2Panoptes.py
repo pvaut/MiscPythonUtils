@@ -4,12 +4,14 @@ import matplotlib.pyplot as plt
 
 import MySQLdb
 
+import unidecode
+
 
 DBSRV = 'localhost'
 DBUSER = 'root'
 DBPASS = '1234'
-BASEDIR = '/users/pvaut/Documents/Genome'
-SOURCEDIR = BASEDIR + '/SourceData/sampledata/datasets/PfReconn'
+BASEDIR = '/home/pvaut/Documents/Genome'
+SOURCEDIR = BASEDIR + '/SourceData/datasets/PfReconn'
 DB='mm6_pfprism'
 
 def LoadSQLTable(tb, tableName, maxRowCount=None):
@@ -27,7 +29,13 @@ def LoadSQLTable(tb, tableName, maxRowCount=None):
         tb.AddRowEmpty()
         rownr = tb.GetRowCount()-1
         for colnr in range(len(row)):
-            tb.SetValue(rownr, colnr, row[colnr])
+            content = row[colnr]
+            if content is not None:
+                if isinstance(content, (int, long, float)):
+                    content = str(content)
+                else:
+                    content = unidecode.unidecode(content)
+            tb.SetValue(rownr, colnr, content)
 
 
 tbEntities = VTTable.VTTable()
@@ -50,6 +58,8 @@ tbSamples.AddColumn(VTTable.VTColumn('longitude', 'Value'))
 tbSamples.AddColumn(VTTable.VTColumn('latitude', 'Value'))
 tbSamples.AddColumn(VTTable.VTColumn('location_accuracy', 'Value'))
 tbSamples.AddColumn(VTTable.VTColumn('inferred_coordinates', 'Text'))
+tbSamples.AddColumn(VTTable.VTColumn('country_iso', 'Text'))
+tbSamples.AddColumn(VTTable.VTColumn('region', 'Text'))
 LoadSQLTable(tbSamples, 'sample')
 tbSamples.MapCol('owner', EntityId2Name)
 tbSamples.PrintRows(0,10)
@@ -87,9 +97,10 @@ sMetaKeys = ['Set', 'method', 'country', 'region', 'PI', 'contact', 'Barcode sca
 mapMetaKeys = {}
 
 for metaKey in sMetaKeys:
-    tbSamples.AddColumn(VTTable.VTColumn(metaKey, 'Text'))
-    tbSamples.FillColumn(metaKey, '')
-    colnr = tbSamples.GetColNr(metaKey)
+    colName = 'MT' + metaKey.replace(' ', '')
+    tbSamples.AddColumn(VTTable.VTColumn(colName, 'Text'))
+    tbSamples.FillColumn(colName, '')
+    colnr = tbSamples.GetColNr(colName)
     mapMetaKeys[metaKey] = colnr
     # for rownr in tbSamples.GetRowNrRange():
     #     tbSamples.SetValue(rownr, colnr, '')
@@ -99,19 +110,20 @@ for rownr in tbSampleMeta.GetRowNrRange():
     content = tbSampleMeta.GetValue(rownr, tbSmpMt_ColNrValue)
     if sampleid is not None:
         if sampleid not in mapSamples:
-            print('Missing sample '+sampleid)
-        if key in mapMetaKeys:
-            tbSamples.SetValue(mapSamples[sampleid], mapMetaKeys[key], content)
+            print('Missing sample '+sampleid+';'+key+';'+content)
+        else:
+            if key in mapMetaKeys:
+                tbSamples.SetValue(mapSamples[sampleid], mapMetaKeys[key], content)
 
-tbSamples.RenameCol('Set', 'MTSet')
-tbSamples.RenameCol('method', 'MTMethod')
-tbSamples.RenameCol('country', 'MTCountry')
-tbSamples.RenameCol('region', 'MTRegion')
-tbSamples.RenameCol('Barcode scan location', 'MTBarcodeScanLocation')
-tbSamples.RenameCol('supplier', 'MTSupplier')
-tbSamples.RenameCol('sequenom', 'MTSequenom')
-tbSamples.RenameCol('reported', 'MTReported')
-tbSamples.RenameCol('internal', 'MTInternal')
+# tbSamples.RenameCol('Set', 'MTSet')
+# tbSamples.RenameCol('method', 'MTMethod')
+# tbSamples.RenameCol('country', 'MTCountry')
+# tbSamples.RenameCol('region', 'MTRegion')
+# tbSamples.RenameCol('Barcode scan location', 'MTBarcodeScanLocation')
+# tbSamples.RenameCol('supplier', 'MTSupplier')
+# tbSamples.RenameCol('sequenom', 'MTSequenom')
+# tbSamples.RenameCol('reported', 'MTReported')
+# tbSamples.RenameCol('internal', 'MTInternal')
 
 tbSamples.MapCol('collection_date', None2Empty)
 tbSamples.MapCol('longitude', None2Empty)
