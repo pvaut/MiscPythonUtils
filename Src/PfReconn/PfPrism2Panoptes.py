@@ -54,6 +54,8 @@ tbSamples.AddColumn(VTTable.VTColumn('source_label', 'Text'))
 tbSamples.AddColumn(VTTable.VTColumn('seq_label', 'Text'))
 tbSamples.AddColumn(VTTable.VTColumn('owner', 'Text'))
 tbSamples.AddColumn(VTTable.VTColumn('collection_date', 'Text'))
+tbSamples.AddColumn(VTTable.VTColumn('dna_extraction_date', 'Text'))
+tbSamples.AddColumn(VTTable.VTColumn('genotype_date', 'Text'))
 tbSamples.AddColumn(VTTable.VTColumn('longitude', 'Value'))
 tbSamples.AddColumn(VTTable.VTColumn('latitude', 'Value'))
 tbSamples.AddColumn(VTTable.VTColumn('location_accuracy', 'Value'))
@@ -80,6 +82,8 @@ def None2Empty(str):
         return str
 
 tbSamples.MapCol('collection_date', parseDate)
+tbSamples.MapCol('dna_extraction_date', parseDate)
+tbSamples.MapCol('genotype_date', parseDate)
 
 
 tbSampleMeta = VTTable.VTTable()
@@ -113,6 +117,10 @@ for rownr in tbSampleMeta.GetRowNrRange():
             print('Missing sample '+sampleid+';'+key+';'+content)
         else:
             if key in mapMetaKeys:
+                prevContent = tbSamples.GetValue(mapSamples[sampleid], mapMetaKeys[key])
+                if len(prevContent) > 0:
+                    content = prevContent + ';' + content
+                    print('MULTIPLE KEY VALUES: '+sampleid+';'+key+'='+content)
                 tbSamples.SetValue(mapSamples[sampleid], mapMetaKeys[key], content)
 
 # tbSamples.RenameCol('Set', 'MTSet')
@@ -206,11 +214,11 @@ for rownr in tbCallsOrig.GetRowNrRange():
             tbCallsProcessed.SetValue(rownr_call, 2, tbAssays.GetValue(rownr_assay, tbAssays.GetColNr('label')))
             mapCalls[callid] = rownr_call
         rownr_call = mapCalls[callid]
-        if param == 1:
+        if int(param) == 1:
             tbCallsProcessed.SetValue(rownr_call,3, call)
-        if param == 2:
+        if int(param) == 2:
             tbCallsProcessed.SetValue(rownr_call,4, call)
-        if param == 3:
+        if int(param) == 3:
             tbCallsProcessed.SetValue(rownr_call,5, call)
 
 
