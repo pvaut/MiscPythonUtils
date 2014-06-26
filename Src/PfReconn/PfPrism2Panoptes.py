@@ -1,10 +1,12 @@
 from TableUtils import VTTable
 import sys
 import matplotlib.pyplot as plt
-
 import MySQLdb
-
 import unidecode
+import GeoTools
+
+# TODO: fetch from ftp://ftp.sanger.ac.uk/pub/teams/112/static/n8crwy38nh.zip
+
 
 
 DBSRV = 'localhost'
@@ -67,10 +69,9 @@ tbSamples.MapCol('owner', EntityId2Name)
 tbSamples.PrintRows(0,10)
 mapSamples = tbSamples.BuildColDict('id', False)
 
-
 def parseDate(str):
     if str is None:
-        return None
+        return ''
     str2 = str[0:4]+'-'+str[4:6]+'-'+str[6:8]
 #    print('===='+str+'===='+str2)
     return str2
@@ -81,9 +82,40 @@ def None2Empty(str):
     else:
         return str
 
+tbSamples.MapCol('country_iso', None2Empty)
+tbSamples.MapCol('region', None2Empty)
+tbSamples.MapCol('location_accuracy', None2Empty)
+
+
 tbSamples.MapCol('collection_date', parseDate)
 tbSamples.MapCol('dna_extraction_date', parseDate)
 tbSamples.MapCol('genotype_date', parseDate)
+
+tbSamples.PrintRows(0, 10)
+
+geoData = []
+for rownr in tbSamples.GetRowNrRange():
+    id = tbSamples.GetValue(rownr,tbSamples.GetColNr('id'))
+    longit = tbSamples.GetValue(rownr,tbSamples.GetColNr('longitude'))
+    latit = tbSamples.GetValue(rownr,tbSamples.GetColNr('latitude'))
+    if (longit is not None) and (latit is not None):
+        geoData.append({
+            'id': id,
+            'longit': float(longit),
+            'latit': float(latit)
+        })
+tbSamples.MapCol('longitude', None2Empty)
+tbSamples.MapCol('latitude', None2Empty)
+GeoTools.Aggregate(geoData, 2)
+
+idx = tbSamples.BuildColDict('id', False)
+for pt in geoData:
+    rownr = idx[pt['id']]
+    tbSamples.SetValue(rownr, tbSamples.GetColNr('longitude'), pt['longit'])
+    tbSamples.SetValue(rownr, tbSamples.GetColNr('latitude'), pt['latit'])
+
+
+
 
 
 tbSampleMeta = VTTable.VTTable()
@@ -96,6 +128,7 @@ tbSmpMt_ColNrValue = tbSampleMeta.GetColNr('value')
 LoadSQLTable(tbSampleMeta, 'vw_metadata')
 tbSampleMeta.ConvertToAscii('value')
 tbSampleMeta.PrintRows(0, 10)
+
 
 sMetaKeys = ['Set', 'method', 'country', 'region', 'PI', 'contact', 'Barcode scan location', 'supplier', 'sequenom', 'reported', 'internal']
 mapMetaKeys = {}
@@ -133,12 +166,6 @@ for rownr in tbSampleMeta.GetRowNrRange():
 # tbSamples.RenameCol('reported', 'MTReported')
 # tbSamples.RenameCol('internal', 'MTInternal')
 
-tbSamples.MapCol('collection_date', None2Empty)
-tbSamples.MapCol('longitude', None2Empty)
-tbSamples.MapCol('latitude', None2Empty)
-tbSamples.MapCol('location_accuracy', None2Empty)
-
-tbSamples.PrintRows(0, 10)
 
 tbSamples.saveheadertype = False
 tbSamples.SaveFile(SOURCEDIR+'/datatables/samples/data')
@@ -160,10 +187,23 @@ tbAssays.AddColumn(VTTable.VTColumn('pf_pos_30', 'Value'))
 tbAssays.AddColumn(VTTable.VTColumn('gene', 'Text'))
 #pf_chr_214 | pf_pos_214 | pf_chr_30 | pf_pos_30 | gene
 LoadSQLTable(tbAssays, 'assay')
-tbAssays.PrintRows(0, 10)
+tbAssays.MapCol('gene', None2Empty)
+
+
+def ChromNr2Name(nr):
+    if nr is None:
+        return ''
+    nr = str(nr)
+    if len(nr)<2:
+        nr = '0' + nr
+    return "Pf3D7_"+nr+"_v3"
+tbAssays.MapCol('pf_chr_30', ChromNr2Name)
+
+tbAssays.PrintRows(0, 1000)
 mapAssays = tbAssays.BuildColDict('id', False)
 tbAssays.saveheadertype = False
 tbAssays.SaveFile(SOURCEDIR+'/datatables/assays/data')
+
 
 
 
@@ -175,6 +215,7 @@ tbCallsOrig.AddColumn(VTTable.VTColumn('params', 'Value'))
 tbCallsOrig.AddColumn(VTTable.VTColumn('call', 'Text'))
 #pf_chr_214 | pf_pos_214 | pf_chr_30 | pf_pos_30 | gene
 LoadSQLTable(tbCallsOrig, 'stored_vw_snpcalls', None)
+tbCallsOrig.MapCol('call', None2Empty)
 tbCallsOrig.PrintRows(0, 10)
 
 
@@ -229,6 +270,7 @@ tbCallsIllumina.AddColumn(VTTable.VTColumn('sample', 'Text'))
 tbCallsIllumina.AddColumn(VTTable.VTColumn('assay', 'Text'))
 tbCallsIllumina.AddColumn(VTTable.VTColumn('illumina_call', 'Text'))
 LoadSQLTable(tbCallsIllumina, 'z_illumina_calls', None)
+tbCallsIllumina.MapCol('illumina_call', None2Empty)
 tbCallsIllumina.PrintRows(0, 10)
 for rownr in tbCallsIllumina.GetRowNrRange():
     sampleid = tbCallsIllumina.GetValue(rownr, 0)
