@@ -15,13 +15,15 @@ DBPASS = '1234'
 BASEDIR = '/home/pvaut/Documents/Genome'
 SOURCEDIR = BASEDIR + '/SourceData/datasets/PfReconn'
 DB='mm6_pfprism'
+limit = 1000000000# !!!
 
 def LoadSQLTable(tb, tableName, maxRowCount=None):
     db = MySQLdb.connect(host=DBSRV, user=DBUSER, passwd=DBPASS, db=DB, charset='utf8')
     cur = db.cursor()
-    whereclause='select {colnames} from {tablename}'.format(
+    whereclause='select {colnames} from {tablename} limit {limit}'.format(
         colnames=', '.join(['`'+vl+'`' for vl in tb.GetColList()]),
-        tablename=tableName
+        tablename=tableName,
+        limit=limit
     )
     if maxRowCount is not None:
         whereclause += ' LIMIT '+str(maxRowCount)
@@ -167,8 +169,6 @@ for rownr in tbSampleMeta.GetRowNrRange():
 # tbSamples.RenameCol('internal', 'MTInternal')
 
 
-tbSamples.saveheadertype = False
-tbSamples.SaveFile(SOURCEDIR+'/datatables/samples/data')
 
 
 
@@ -189,6 +189,21 @@ tbAssays.AddColumn(VTTable.VTColumn('gene', 'Text'))
 LoadSQLTable(tbAssays, 'assay')
 tbAssays.MapCol('gene', None2Empty)
 
+tbAssaysExtra = VTTable.VTTable()
+tbAssaysExtra.allColumnsText = True
+tbAssaysExtra.LoadFile(BASEDIR+'/PfReconn/AssayMetaData.txt')
+tbAssaysExtra.DropCol("label")
+tbAssaysExtra.DropCol("allele1")
+tbAssaysExtra.DropCol("allele2")
+tbAssaysExtra.DropCol("pf_chr_214")
+tbAssaysExtra.DropCol("pf_pos_214")
+tbAssaysExtra.DropCol("pf_chr_30")
+tbAssaysExtra.DropCol("pf_pos_30")
+tbAssaysExtra.DropCol("gene")
+tb = VTTable.VTTable()
+tb.MergeTablesByKeyFrom(tbAssays, tbAssaysExtra, 'id', True, False)
+tbAssays = tb
+
 
 def ChromNr2Name(nr):
     if nr is None:
@@ -201,8 +216,6 @@ tbAssays.MapCol('pf_chr_30', ChromNr2Name)
 
 tbAssays.PrintRows(0, 1000)
 mapAssays = tbAssays.BuildColDict('id', False)
-tbAssays.saveheadertype = False
-tbAssays.SaveFile(SOURCEDIR+'/datatables/assays/data')
 
 
 
@@ -298,3 +311,182 @@ for rownr in tbCallsIllumina.GetRowNrRange():
 tbCallsProcessed.PrintRows(0,10)
 tbCallsProcessed.saveheadertype = False
 tbCallsProcessed.SaveFile(SOURCEDIR+'/datatables/calls/data')
+
+
+
+print('DETERMINING SAMPLE CALL STATS...')
+
+sampleData = {}
+for rownr in tbSamples.GetRowNrRange():
+    sampleData[tbSamples.GetValue(rownr, 0)] = {
+        'assay_sq_count': 0,
+        'assay_sq_water': 0,
+        'assay_sq_mixed': 0,
+        'assay_sq_nonref': 0,
+        'assay_il_count': 0,
+        'assay_il_missing': 0,
+        'assay_il_mixed': 0,
+        'assay_both_count': 0,
+        'assay_both_conform': 0,
+    }
+
+for rownr in tbCallsProcessed.GetRowNrRange():
+    sampleid = tbCallsProcessed.GetValue(rownr, 0)
+#    assayid = tbCallsProcessed.GetValue(rownr, 1)
+    callsq = tbCallsProcessed.GetValue(rownr, 5)
+    callil = tbCallsProcessed.GetValue(rownr, 7)
+    sampleInfo = sampleData[sampleid]
+    if callsq:
+        sampleInfo['assay_sq_count'] += 1
+        if callsq == 'W':
+            sampleInfo['assay_sq_water'] += 1
+        if callsq == 'M':
+            sampleInfo['assay_sq_mixed'] += 1
+
+    if callil:
+        sampleInfo['assay_il_count'] += 1
+        if callil == 'M':
+            sampleInfo['assay_il_mixed'] += 1
+        if callil == '-':
+            sampleInfo['assay_il_missing'] += 1
+
+    if callil and callsq:
+        if (callsq in ['A', 'C', 'G', 'T']) and (callil in ['A', 'C', 'G', 'T']):
+            sampleInfo['assay_both_count'] += 1
+            if callil == callsq:
+                sampleInfo['assay_both_conform'] += 1
+
+#    if callsq is not None and callill is not None:
+#        print('{0} {1} {2} {3}'.format(sampleid,assayid,callsq,callill))
+
+
+
+tbSamples.AddColumn(VTTable.VTColumn('SQAssayCount', 'Value'))
+tbSamples.FillColumn('SQAssayCount', 0)
+tbSamples.AddColumn(VTTable.VTColumn('SQAssayWaterFrac', 'Value'))
+tbSamples.FillColumn('SQAssayWaterFrac', None)
+tbSamples.AddColumn(VTTable.VTColumn('SQAssayMixedFrac', 'Value'))
+tbSamples.FillColumn('SQAssayMixedFrac', None)
+tbSamples.AddColumn(VTTable.VTColumn('ILAssayCount', 'Value'))
+tbSamples.FillColumn('ILAssayCount', 0)
+tbSamples.AddColumn(VTTable.VTColumn('ILAssayMixedFrac', 'Value'))
+tbSamples.FillColumn('ILAssayMixedFrac', None)
+tbSamples.AddColumn(VTTable.VTColumn('ILAssayMissingFrac', 'Value'))
+tbSamples.FillColumn('ILAssayMissingFrac', None)
+tbSamples.AddColumn(VTTable.VTColumn('ILAssayDiscordFrac', 'Value'))
+tbSamples.FillColumn('ILAssayDiscordFrac', None)
+
+for rownr in tbSamples.GetRowNrRange():
+    sampleid = tbSamples.GetValue(rownr, 0)
+    sampleInfo = sampleData[sampleid]
+    # sq data
+    assaycount = sampleInfo['assay_sq_count']
+    tbSamples.SetValue(rownr, tbSamples.GetColNr('SQAssayCount'), assaycount)
+    if assaycount > 0:
+        tbSamples.SetValue(rownr, tbSamples.GetColNr('SQAssayWaterFrac'), sampleInfo['assay_sq_water']*100.0/assaycount)
+        tbSamples.SetValue(rownr, tbSamples.GetColNr('SQAssayMixedFrac'), sampleInfo['assay_sq_mixed']*100.0/assaycount)
+    #ill data
+    assaycount = sampleInfo['assay_il_count']
+    tbSamples.SetValue(rownr, tbSamples.GetColNr('ILAssayCount'), assaycount)
+    if assaycount > 0:
+        tbSamples.SetValue(rownr, tbSamples.GetColNr('ILAssayMixedFrac'), sampleInfo['assay_il_mixed']*100.0/assaycount)
+        tbSamples.SetValue(rownr, tbSamples.GetColNr('ILAssayMissingFrac'), sampleInfo['assay_il_missing']*100.0/assaycount)
+    if sampleInfo['assay_both_count'] > 0:
+        tbSamples.SetValue(rownr, tbSamples.GetColNr('ILAssayDiscordFrac'), 100.0-sampleInfo['assay_both_conform']*100.0/sampleInfo['assay_both_count'])
+
+
+tbSamples.PrintRows(0,20)
+tbSamples.saveheadertype = False
+tbSamples.SaveFile(SOURCEDIR+'/datatables/samples/data')
+
+
+
+print('DETERMINING ASSAY CALL STATS...')
+
+assayData = {}
+for rownr in tbAssays.GetRowNrRange():
+    assayData[tbAssays.GetValue(rownr, 0)] = {
+        'sample_sq_count': 0,
+        'sample_sq_water': 0,
+        'sample_sq_mixed': 0,
+        'sample_sq_hascall': 0,
+        'sample_sq_nonref': 0,
+        'sample_il_count': 0,
+        'sample_il_missing': 0,
+        'sample_il_mixed': 0,
+        'sample_both_count': 0,
+        'sample_both_conform': 0,
+        'ref': tbAssays.GetValue(rownr,'allele1'),
+        'alt': tbAssays.GetValue(rownr,'allele2')
+    }
+
+for rownr in tbCallsProcessed.GetRowNrRange():
+    assayid = tbCallsProcessed.GetValue(rownr, 1)
+    callsq = tbCallsProcessed.GetValue(rownr, 5)
+    callil = tbCallsProcessed.GetValue(rownr, 7)
+    assayInfo = assayData[assayid]
+    if callsq:
+        assayInfo['sample_sq_count'] += 1
+        if callsq == 'W':
+            assayInfo['sample_sq_water'] += 1
+        if callsq == 'M':
+            assayInfo['sample_sq_mixed'] += 1
+        if (callsq == assayInfo['ref']) or (callsq == assayInfo['alt']):
+            assayInfo['sample_sq_hascall'] += 1
+            if callsq == assayInfo['alt']:
+                assayInfo['sample_sq_nonref'] += 1
+
+    if callil:
+        assayInfo['sample_il_count'] += 1
+        if callil == 'M':
+            assayInfo['sample_il_mixed'] += 1
+        if callil == '-':
+            assayInfo['sample_il_missing'] += 1
+
+    if callil and callsq:
+        if (callsq in ['A', 'C', 'G', 'T']) and (callil in ['A', 'C', 'G', 'T']):
+            assayInfo['sample_both_count'] += 1
+            if callil == callsq:
+                assayInfo['sample_both_conform'] += 1
+
+tbAssays.AddColumn(VTTable.VTColumn('SQSampleCount', 'Value'))
+tbAssays.FillColumn('SQSampleCount', 0)
+tbAssays.AddColumn(VTTable.VTColumn('SQSampleWaterFrac', 'Value'))
+tbAssays.FillColumn('SQSampleWaterFrac', None)
+tbAssays.AddColumn(VTTable.VTColumn('SQSampleMixedFrac', 'Value'))
+tbAssays.FillColumn('SQSampleMixedFrac', None)
+tbAssays.AddColumn(VTTable.VTColumn('SQSampleNonrefFrac', 'Value'))
+tbAssays.FillColumn('SQSampleNonrefFrac', None)
+tbAssays.AddColumn(VTTable.VTColumn('ILSampleCount', 'Value'))
+tbAssays.FillColumn('ILSampleCount', 0)
+tbAssays.AddColumn(VTTable.VTColumn('ILSampleMixedFrac', 'Value'))
+tbAssays.FillColumn('ILSampleMixedFrac', None)
+tbAssays.AddColumn(VTTable.VTColumn('ILSampleMissingFrac', 'Value'))
+tbAssays.FillColumn('ILSampleMissingFrac', None)
+tbAssays.AddColumn(VTTable.VTColumn('ILSampleDiscordFrac', 'Value'))
+tbAssays.FillColumn('ILSampleDiscordFrac', None)
+
+for rownr in tbAssays.GetRowNrRange():
+    assayid = tbAssays.GetValue(rownr, 0)
+    assayInfo = assayData[assayid]
+    # sq data
+    samplecount = assayInfo['sample_sq_count']
+    tbAssays.SetValue(rownr, tbAssays.GetColNr('SQSampleCount'), samplecount)
+    if samplecount > 0:
+        tbAssays.SetValue(rownr, tbAssays.GetColNr('SQSampleWaterFrac'), assayInfo['sample_sq_water']*100.0/samplecount)
+        tbAssays.SetValue(rownr, tbAssays.GetColNr('SQSampleMixedFrac'), assayInfo['sample_sq_mixed']*100.0/samplecount)
+        if assayInfo['sample_sq_hascall']>0:
+            tbAssays.SetValue(rownr, tbAssays.GetColNr('SQSampleNonrefFrac'), assayInfo['sample_sq_nonref']*100.0/assayInfo['sample_sq_hascall'])
+    #ill data
+    samplecount = assayInfo['sample_il_count']
+    tbAssays.SetValue(rownr, tbAssays.GetColNr('ILSampleCount'), samplecount)
+    if samplecount > 0:
+        tbAssays.SetValue(rownr, tbAssays.GetColNr('ILSampleMixedFrac'), assayInfo['sample_il_mixed']*100.0/samplecount)
+        tbAssays.SetValue(rownr, tbAssays.GetColNr('ILSampleMissingFrac'), assayInfo['sample_il_missing']*100.0/samplecount)
+    if assayInfo['sample_both_count']>0:
+        tbAssays.SetValue(rownr, tbAssays.GetColNr('ILSampleDiscordFrac'), 100.0-assayInfo['sample_both_conform']*100.0/assayInfo['sample_both_count'])
+
+
+tbAssays.PrintRows(0, 20)
+tbAssays.saveheadertype = False
+tbAssays.SaveFile(SOURCEDIR+'/datatables/assays/data')
