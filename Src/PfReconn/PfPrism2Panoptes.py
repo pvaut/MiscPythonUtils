@@ -1,6 +1,6 @@
 from TableUtils import VTTable
 import sys
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import MySQLdb
 import unidecode
 import GeoTools
