@@ -2,6 +2,7 @@ import math
 import string
 
 import xlrd
+import unidecode
 
 VERYSMALL= -1.0e199
 VERYLARGE= +1.0e199
@@ -115,8 +116,8 @@ class VTTable:
                 try:
                     val=val.encode('ascii','ignore')
                 except UnicodeDecodeError:
+                    val=unidecode.unidecode(val)
                     print('Unable to encode '+val)
-                    val='*failed encoding*'
                 self.SetValue(rownr, colnr, val)
 
 
